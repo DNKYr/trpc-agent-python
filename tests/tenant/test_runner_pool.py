@@ -64,3 +64,9 @@ async def test_close_clears_cache():
     await pool.close()
     assert pool._runners == {}
     assert pool._versions == {}
+
+
+def test_public_exports_runner():
+    import trpc_agent_sdk.tenant as tenant_pkg
+    assert hasattr(tenant_pkg, "TenantAgentFactory")
+    assert hasattr(tenant_pkg, "RunnerPool")
