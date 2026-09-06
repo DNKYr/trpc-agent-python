@@ -18,6 +18,8 @@ from trpc_agent_sdk.tenant._errors import TenantNotFoundError
 from trpc_agent_sdk.tenant._registry import TenantRegistry
 from trpc_agent_sdk.tenant._secret_store import InMemorySecretStore
 from trpc_agent_sdk.tenant._storage_adapter import StorageAdapter
+from trpc_agent_sdk.tenant._tenant import BackendSpec
+from trpc_agent_sdk.tenant._tenant import DataBackendConfig
 from trpc_agent_sdk.tenant._tenant import ModelConfig
 from trpc_agent_sdk.tenant._tenant import Tenant
 from trpc_agent_sdk.tenant._tenant import ToolPermissions
@@ -69,7 +71,14 @@ def test_filter_tools_allowlist_minus_denylist():
 
 async def test_build_runner_end_to_end():
     source = InMemoryTenantSource()
-    await source.put(Tenant(tenant_id="acme", model_settings=ModelConfig(provider="openai", model_name="gpt-4o")))
+    backends = DataBackendConfig(
+        session=BackendSpec(type="in_memory"),
+        memory=BackendSpec(type="in_memory"),
+        artifact=BackendSpec(type="in_memory"),
+    )
+    await source.put(Tenant(tenant_id="acme",
+                            model_settings=ModelConfig(provider="openai", model_name="gpt-4o"),
+                            data_backends=backends))
     factory, _, storage = _make_factory(source=source)
     runner = await factory.build_runner("acme")
     assert runner.app_name == "acme:default"
