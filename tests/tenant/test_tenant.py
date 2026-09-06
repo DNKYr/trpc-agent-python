@@ -17,7 +17,7 @@ from trpc_agent_sdk.tenant._tenant import Tenant
 def _make_tenant(**overrides):
     data = {
         "tenant_id": "acme",
-        "model_config": ModelConfig(provider="openai", model_name="gpt-4o"),
+        "model_settings": ModelConfig(provider="openai", model_name="gpt-4o"),
     }
     data.update(overrides)
     return Tenant(**data)

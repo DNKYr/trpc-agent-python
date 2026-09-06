@@ -134,7 +134,7 @@ class Tenant(BaseModel):
     """租户完整配置。"""
     tenant_id: str                                    # 正则 ^[a-zA-Z0-9_-]{1,64}$
     app_config: AppConfig = Field(default_factory=AppConfig)
-    model_config: ModelConfig
+    model_settings: ModelConfig
     tool_permissions: ToolPermissions = Field(default_factory=ToolPermissions)
     im_channels: list[ChannelBinding] = Field(default_factory=list)
     data_backends: DataBackendConfig = Field(default_factory=DataBackendConfig)
@@ -314,3 +314,4 @@ tenant_versions (
 2. **`tenant_id` 长度上限**：64 字符（正则 `^[a-zA-Z0-9_-]{1,64}$`）。
 3. **默认后端**：`DataBackendConfig` 默认全 `redis`（生产多节点可用）。
 4. **`Runner`/`Agent` 构建**：推迟到 SP3（SP1 纯建模 + 基础组件，不构建 Runner）。
+5. **字段命名**：`Tenant.model_config` 重命名为 `model_settings` —— pydantic 2.13 硬保留 `model_config` 作为模型配置属性，无法用作字段名。

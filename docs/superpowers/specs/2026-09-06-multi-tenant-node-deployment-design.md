@@ -95,7 +95,7 @@ IM 平台 ──▶ Channel Adapter ──▶ Agent Gateway ──▶ Agent Work
 class Tenant(BaseModel):
     tenant_id: str                          # 全局唯一
     app_config: AppConfig                    # 默认 app_name、agent 描述
-    model_config: ModelConfig                # provider、model name、endpoint、timeout
+    model_settings: ModelConfig              # provider、model name、endpoint、timeout
     tool_permissions: ToolPermissions        # 白名单/黑名单、危险工具需二次确认
     im_channels: list[ChannelBinding]        # 企微/Telegram 等，含 webhook 配置
     data_backends: DataBackendConfig         # session/memory/summary/artifact/knowledge/audit 各自后端
@@ -340,7 +340,7 @@ IM callback → Runner 执行 → Tool 调用 → Session/Memory 读写 → IM �
 复用现有 `StorageSession` / `SessionStorageEvent` / `MemStorageEvent` 结构，仅增加 `tenant_id` 命名空间与新增 `summary` / `audit_log` / `channel_binding` 表。
 
 ```sql
-tenant            (tenant_id PK, display_name, app_config JSON, model_config JSON,
+tenant            (tenant_id PK, display_name, app_config JSON, model_settings JSON,
                    tool_permissions JSON, audit_policy JSON, budgets JSON,
                    data_backend_config JSON, secret_refs JSON, status, version, updated_at)
 

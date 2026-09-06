@@ -160,7 +160,7 @@ git commit -m "feat(tenant): add tenant and secret exception types"
 - Create: `tests/tenant/test_tenant.py`
 
 **Interfaces:**
-- Produces: `Tenant`（`tenant_id`, `app_config`, `model_config`, `tool_permissions`, `im_channels`, `data_backends`, `audit_policy`, `budgets`, `rate_limits`, `status`, `version`；属性 `sdk_app_name`）。子模型：`ModelConfig`, `AppConfig`, `ToolPermissions`, `ChannelBinding`, `BackendSpec`, `DataBackendConfig`, `AuditPolicy`, `BudgetConfig`, `RateLimitConfig`。
+- Produces: `Tenant`（`tenant_id`, `app_config`, `model_settings`, `tool_permissions`, `im_channels`, `data_backends`, `audit_policy`, `budgets`, `rate_limits`, `status`, `version`；属性 `sdk_app_name`）。子模型：`ModelConfig`, `AppConfig`, `ToolPermissions`, `ChannelBinding`, `BackendSpec`, `DataBackendConfig`, `AuditPolicy`, `BudgetConfig`, `RateLimitConfig`。
 - 约束：`tenant_id` 匹配 `^[a-zA-Z0-9_-]{1,64}$`；`AuditPolicy.sample_rate` 在 `[0,1]`。
 
 - [ ] **Step 1: 写失败测试**
@@ -186,7 +186,7 @@ from trpc_agent_sdk.tenant._tenant import Tenant
 def _make_tenant(**overrides):
     data = {
         "tenant_id": "acme",
-        "model_config": ModelConfig(provider="openai", model_name="gpt-4o"),
+        "model_settings": ModelConfig(provider="openai", model_name="gpt-4o"),
     }
     data.update(overrides)
     return Tenant(**data)
@@ -355,7 +355,7 @@ class Tenant(BaseModel):
 
     tenant_id: str
     app_config: AppConfig = Field(default_factory=AppConfig)
-    model_config: ModelConfig
+    model_settings: ModelConfig
     tool_permissions: ToolPermissions = Field(default_factory=ToolPermissions)
     im_channels: list[ChannelBinding] = Field(default_factory=list)
     data_backends: DataBackendConfig = Field(default_factory=DataBackendConfig)
@@ -729,7 +729,7 @@ class _FakeSource(TenantSource):
 def _tenant(version=1, status="active"):
     return Tenant(
         tenant_id="acme",
-        model_config=ModelConfig(provider="openai", model_name="gpt-4o"),
+        model_settings=ModelConfig(provider="openai", model_name="gpt-4o"),
         version=version,
         status=status,
     )
@@ -933,7 +933,7 @@ from trpc_agent_sdk.tenant._tenant_source import InMemoryTenantSource
 
 
 def _tenant():
-    return Tenant(tenant_id="acme", model_config=ModelConfig(provider="openai", model_name="gpt-4o"))
+    return Tenant(tenant_id="acme", model_settings=ModelConfig(provider="openai", model_name="gpt-4o"))
 
 
 async def test_in_memory_roundtrip():
@@ -957,7 +957,7 @@ async def test_file_roundtrip(tmp_path):
     await source.put(_tenant())
     loaded = await source.get("acme")
     assert loaded is not None
-    assert loaded.model_config.model_name == "gpt-4o"
+    assert loaded.model_settings.model_name == "gpt-4o"
     assert await source.list() == [loaded]
 
 
@@ -1098,7 +1098,7 @@ from trpc_agent_sdk.tenant._tenant_source import SqlTenantSource
 
 
 def _tenant():
-    return Tenant(tenant_id="acme", model_config=ModelConfig(provider="openai", model_name="gpt-4o"))
+    return Tenant(tenant_id="acme", model_settings=ModelConfig(provider="openai", model_name="gpt-4o"))
 
 
 async def test_sql_roundtrip():
@@ -1106,7 +1106,7 @@ async def test_sql_roundtrip():
     await source.put(_tenant())
     loaded = await source.get("acme")
     assert loaded is not None
-    assert loaded.model_config.model_name == "gpt-4o"
+    assert loaded.model_settings.model_name == "gpt-4o"
     await source.close()
 
 
@@ -1114,17 +1114,17 @@ async def test_sql_update_overwrites_config():
     source = SqlTenantSource(db_url="sqlite:///:memory:", is_async=False)
     await source.put(_tenant())
     updated = _tenant()
-    updated.model_config.model_name = "gpt-4o-mini"
+    updated.model_settings.model_name = "gpt-4o-mini"
     await source.put(updated)
     loaded = await source.get("acme")
-    assert loaded.model_config.model_name == "gpt-4o-mini"
+    assert loaded.model_settings.model_name == "gpt-4o-mini"
     await source.close()
 
 
 async def test_sql_list():
     source = SqlTenantSource(db_url="sqlite:///:memory:", is_async=False)
-    await source.put(Tenant(tenant_id="acme", model_config=ModelConfig(provider="openai", model_name="gpt-4o")))
-    await source.put(Tenant(tenant_id="beta", model_config=ModelConfig(provider="openai", model_name="gpt-4o")))
+    await source.put(Tenant(tenant_id="acme", model_settings=ModelConfig(provider="openai", model_name="gpt-4o")))
+    await source.put(Tenant(tenant_id="beta", model_settings=ModelConfig(provider="openai", model_name="gpt-4o")))
     tenants = await source.list()
     assert {t.tenant_id for t in tenants} == {"acme", "beta"}
     await source.close()

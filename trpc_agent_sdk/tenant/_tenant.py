@@ -10,7 +10,7 @@ from __future__ import annotations
 import re
 from typing import Any, Literal, Optional
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 _TENANT_ID_RE = re.compile(r"^[a-zA-Z0-9_-]{1,64}$")
 
@@ -111,33 +111,12 @@ class RateLimitConfig(BaseModel):
     im_messages_per_minute: Optional[int] = None
 
 
-class _ModelConfigDescriptor:
-    """Expose the ``model_config`` field on instances while keeping pydantic's config on the class.
-
-    Pydantic reserves the ``model_config`` attribute name for model configuration and will never
-    treat it as a field (see ``pydantic._internal._fields``). To honor the ``Tenant.model_config``
-    interface, the field is declared as ``model_config_`` with a ``model_config`` alias, and this
-    descriptor routes instance read access of ``model_config`` to the field while preserving
-    class-level access to pydantic's config dict.
-    """
-
-    def __init__(self, config: ConfigDict):
-        self._config = config
-
-    def __get__(self, instance: Any, owner: type) -> Any:
-        if instance is None:
-            return self._config
-        return instance.model_config_
-
-
 class Tenant(BaseModel):
     """Full tenant configuration."""
 
-    model_config = ConfigDict(populate_by_name=True)
-
     tenant_id: str
     app_config: AppConfig = Field(default_factory=AppConfig)
-    model_config_: ModelConfig = Field(alias="model_config")
+    model_settings: ModelConfig
     tool_permissions: ToolPermissions = Field(default_factory=ToolPermissions)
     im_channels: list[ChannelBinding] = Field(default_factory=list)
     data_backends: DataBackendConfig = Field(default_factory=DataBackendConfig)
@@ -158,6 +137,3 @@ class Tenant(BaseModel):
     def sdk_app_name(self) -> str:
         """The app_name namespace used at the SDK layer."""
         return f"{self.tenant_id}:{self.app_config.app_name}"
-
-
-Tenant.model_config = _ModelConfigDescriptor(Tenant.model_config)
