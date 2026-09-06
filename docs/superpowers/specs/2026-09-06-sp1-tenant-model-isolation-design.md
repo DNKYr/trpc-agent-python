@@ -266,7 +266,11 @@ class TenantRegistry:
     async def list(self) -> list[Tenant]: ...
 
     async def rollback(self, tenant_id: str, version: int) -> Optional[Tenant]:
-        """回滚到指定 version 快照。"""
+        """回滚到指定 version 快照。
+
+        SP1 语义：仅从进程内 `_history`（上限 `history_size`）回滚，进程重启后失效。
+        持久化跨重启回滚（读取 `tenant_versions` 表）推迟到后续 SP。
+        """
 
     def subscribe(self, cb: Callable[[str, int], Awaitable[None]]) -> None:
         """订阅变更；回调参数 (tenant_id, new_version)。SP3/SP6 用于灰度/回滚。"""
@@ -288,12 +292,14 @@ tenants (
 tenant_versions (
     tenant_id        VARCHAR(64),
     version          INT,
-    config           JSON NOT NULL,      -- 历史快照（供回滚）
+    config           JSON NOT NULL,      -- 历史快照（持久化供后续跨重启回滚）
     PRIMARY KEY (tenant_id, version)
 )
 ```
 
 密钥不落 `tenants` 表，统一存 `SecretStore`。
+
+> 说明：`tenant_versions` 是持久化快照，SP1 的 `TenantRegistry.rollback` 仅读进程内 `_history`（跨重启回滚留待后续 SP）；`SqlTenantSource.put` 在更新时自动 `version+1`（与 `TenantRegistry.put` 语义一致，二者读同一持久化版本故收敛）。
 
 ---
 

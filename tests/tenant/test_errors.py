@@ -5,8 +5,6 @@
 # tRPC-Agent-Python is licensed under Apache-2.0.
 """Tests for tenant error types."""
 
-import pytest
-
 from trpc_agent_sdk.tenant._errors import SecretNotFoundError
 from trpc_agent_sdk.tenant._errors import TenantNotFoundError
 

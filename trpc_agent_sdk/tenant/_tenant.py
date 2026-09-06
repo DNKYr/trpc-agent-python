@@ -35,6 +35,13 @@ class AppConfig(BaseModel):
     agent_description: str = ""
     instruction: str = ""
 
+    @field_validator("app_name")
+    @classmethod
+    def _validate_app_name(cls, value: str) -> str:
+        if not _TENANT_ID_RE.match(value):
+            raise ValueError("app_name must match ^[a-zA-Z0-9_-]{1,64}$")
+        return value
+
 
 class ToolPermissions(BaseModel):
     """Per-tenant tool permissions."""

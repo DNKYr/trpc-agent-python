@@ -5,8 +5,6 @@
 # tRPC-Agent-Python is licensed under Apache-2.0.
 """Tests for the SQL tenant source using in-memory SQLite."""
 
-import pytest
-
 from trpc_agent_sdk.tenant._tenant import ModelConfig
 from trpc_agent_sdk.tenant._tenant import Tenant
 from trpc_agent_sdk.tenant._tenant_source import SqlTenantSource

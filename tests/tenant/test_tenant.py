@@ -48,6 +48,11 @@ def test_tenant_id_rejects_too_long():
         _make_tenant(tenant_id="a" * 65)
 
 
+def test_app_name_rejects_separator():
+    with pytest.raises(ValidationError):
+        _make_tenant(app_config={"app_name": "a:b"})
+
+
 def test_sample_rate_rejects_out_of_range():
     with pytest.raises(ValidationError):
         AuditPolicy(sample_rate=1.5)
