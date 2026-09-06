@@ -18,16 +18,20 @@ class TenantSource(ABC):
     """Abstract persistence source for tenant configurations."""
 
     @abstractmethod
-    async def get(self, tenant_id: str) -> Optional[Tenant]: ...
+    async def get(self, tenant_id: str) -> Optional[Tenant]:
+        """Return the tenant config for tenant_id, or None if not found."""
 
     @abstractmethod
-    async def put(self, tenant: Tenant) -> None: ...
+    async def put(self, tenant: Tenant) -> None:
+        """Persist the tenant config."""
 
     @abstractmethod
-    async def delete(self, tenant_id: str) -> None: ...
+    async def delete(self, tenant_id: str) -> None:
+        """Delete the tenant config."""
 
     @abstractmethod
-    async def list(self) -> list[Tenant]: ...
+    async def list(self) -> list[Tenant]:
+        """Return all tenant configs."""
 
 
 class TenantRegistry:
