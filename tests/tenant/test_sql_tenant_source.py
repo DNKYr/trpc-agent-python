@@ -45,6 +45,18 @@ async def test_sql_list():
     await source.close()
 
 
+async def test_sql_update_increments_version():
+    source = SqlTenantSource(db_url="sqlite:///:memory:", is_async=False)
+    await source.put(_tenant())
+    updated = _tenant()
+    updated.model_settings.model_name = "gpt-4o-mini"
+    await source.put(updated)
+    loaded = await source.get("acme")
+    assert loaded.version == 2
+    assert loaded.model_settings.model_name == "gpt-4o-mini"
+    await source.close()
+
+
 async def test_sql_delete():
     source = SqlTenantSource(db_url="sqlite:///:memory:", is_async=False)
     await source.put(_tenant())

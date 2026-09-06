@@ -143,17 +143,20 @@ class SqlTenantSource(TenantSource):
             key = SqlKey(key=(tenant.tenant_id,), storage_cls=StorageTenant)
             existing: Optional[StorageTenant] = await self._sql_storage.get(sql_session, key)
             if existing is None:
-                await self._sql_storage.add(sql_session, StorageTenant.from_tenant(tenant))
                 version = tenant.version or 1
             else:
                 version = existing.version + 1
-                existing.config = tenant.model_dump(mode="json")
-                existing.status = tenant.status
+            stored = tenant.model_copy(update={"version": version})
+            if existing is None:
+                await self._sql_storage.add(sql_session, StorageTenant.from_tenant(stored))
+            else:
+                existing.config = stored.model_dump(mode="json")
+                existing.status = stored.status
                 existing.version = version
             version_row = StorageTenantVersion(
-                tenant_id=tenant.tenant_id,
+                tenant_id=stored.tenant_id,
                 version=version,
-                config=tenant.model_dump(mode="json"),
+                config=stored.model_dump(mode="json"),
             )
             await self._sql_storage.add(sql_session, version_row)
             await self._sql_storage.commit(sql_session)
