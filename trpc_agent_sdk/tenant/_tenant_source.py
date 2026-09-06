@@ -13,6 +13,7 @@ from typing import Optional
 
 from ._registry import TenantSource
 from ._tenant import Tenant
+from ._tenant import _TENANT_ID_RE
 
 
 class InMemoryTenantSource(TenantSource):
@@ -42,6 +43,8 @@ class FileTenantSource(TenantSource):
         self._extension = extension
 
     def _path(self, tenant_id: str) -> Path:
+        if not _TENANT_ID_RE.match(tenant_id):
+            raise ValueError(f"invalid tenant_id: {tenant_id}")
         return Path(self._directory) / f"{tenant_id}{self._extension}"
 
     async def get(self, tenant_id: str) -> Optional[Tenant]:

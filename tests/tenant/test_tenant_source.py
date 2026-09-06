@@ -10,6 +10,8 @@ from trpc_agent_sdk.tenant._tenant import Tenant
 from trpc_agent_sdk.tenant._tenant_source import FileTenantSource
 from trpc_agent_sdk.tenant._tenant_source import InMemoryTenantSource
 
+import pytest
+
 
 def _tenant():
     return Tenant(tenant_id="acme", model_settings=ModelConfig(provider="openai", model_name="gpt-4o"))
@@ -51,3 +53,9 @@ async def test_file_delete(tmp_path):
 async def test_file_get_missing(tmp_path):
     source = FileTenantSource(str(tmp_path))
     assert await source.get("nope") is None
+
+
+async def test_file_rejects_unsafe_tenant_id(tmp_path):
+    source = FileTenantSource(str(tmp_path))
+    with pytest.raises(ValueError):
+        await source.get("../../evil")
