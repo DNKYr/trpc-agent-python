@@ -57,3 +57,15 @@ def test_data_backends_default_to_redis():
     backends = DataBackendConfig()
     for name in ("session", "memory", "summary", "artifact", "knowledge", "audit"):
         assert getattr(backends, name).type == "redis"
+
+
+def test_public_exports():
+    import trpc_agent_sdk.tenant as tenant_pkg
+    for name in (
+        "Tenant", "ModelConfig", "AppConfig", "ToolPermissions", "ChannelBinding",
+        "BackendSpec", "DataBackendConfig", "AuditPolicy", "BudgetConfig", "RateLimitConfig",
+        "SecretStore", "EnvSecretStore", "InMemorySecretStore", "Masker", "SensitiveDataFilter",
+        "TenantSource", "TenantRegistry", "InMemoryTenantSource", "FileTenantSource",
+        "SqlTenantSource", "TenantNotFoundError", "SecretNotFoundError",
+    ):
+        assert hasattr(tenant_pkg, name), f"missing export: {name}"
