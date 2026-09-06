@@ -221,3 +221,11 @@ class StorageAdapter:
 3. **artifact 后端**：仅 `in_memory`（对象存储推迟）。
 4. **迁移全量读（选项 1）**：由 `BackendFactory` 保证 session 服务始终默认全量读（`num_recent_events=0`），并丢弃 `options` 中的 `session_config`；迁移复用工厂缓存实例。
 4. **包位置**：`trpc_agent_sdk/tenant/` 内新增 `_backend_factory.py` + `_storage_adapter.py`。
+
+---
+
+## 10. 已知限制（后续 SP 处理）
+
+1. **租户级缓存不随配置变更失效**：`StorageAdapter` 按 `tenant_id` 缓存后端，`TenantRegistry.put` 更新 `data_backends` 后仍返回旧后端（进程重启前）。待 SP3 定义配置热加载语义时，改为按后端 spec / `tenant.version` 作缓存键。
+2. **迁移中断可能丢失事件**：`migrate_session` 先 `create_session` 再逐 event `append_event`，若中途失败，重试时 `get_session` 非空即跳过，缺事件不再补齐。待实现 per-session 事务/补偿。
+3. **密钥轮换不达缓存后端**：`BackendFactory` 缓存键不含解析后的 secret，`SecretStore` 更新后旧连接池仍用旧密钥直到重启。待后续提供缓存失效或密钥注入重算。
