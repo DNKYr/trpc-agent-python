@@ -89,7 +89,7 @@ class BackendFactory:
         raise ValueError(f"unsupported memory backend type: {spec.type}")
 
     def _build_artifact(self, spec: BackendSpec) -> ArtifactServiceABC:
-        if spec.type == "in_memory":
+        if spec.type in ("in_memory", "redis"):
             return InMemoryArtifactService()
         raise ValueError(f"unsupported artifact backend type: {spec.type}")
 
