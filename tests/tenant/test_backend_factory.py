@@ -63,3 +63,53 @@ async def test_secret_ref_without_store_raises():
     spec = BackendSpec(type="redis", dsn="redis://:{password}@localhost:6379/0", secret_ref="pw")
     with pytest.raises(ValueError):
         await factory.session_service(spec)
+
+
+from trpc_agent_sdk.artifacts import InMemoryArtifactService
+from trpc_agent_sdk.memory import InMemoryMemoryService
+from trpc_agent_sdk.memory import RedisMemoryService
+from trpc_agent_sdk.memory import SqlMemoryService
+
+
+async def test_memory_in_memory_enabled():
+    factory = BackendFactory()
+    svc = await factory.memory_service(BackendSpec(type="in_memory"))
+    assert isinstance(svc, InMemoryMemoryService)
+    assert svc.enabled is True
+
+
+async def test_memory_sql():
+    factory = BackendFactory()
+    svc = await factory.memory_service(BackendSpec(type="sql", dsn="sqlite:///:memory:"))
+    assert isinstance(svc, SqlMemoryService)
+    await factory.close()
+
+
+async def test_memory_redis():
+    factory = BackendFactory()
+    svc = await factory.memory_service(BackendSpec(type="redis", dsn="redis://localhost:6379/0"))
+    assert isinstance(svc, RedisMemoryService)
+
+
+async def test_memory_cache_shares_instance():
+    factory = BackendFactory()
+    spec = BackendSpec(type="in_memory")
+    assert (await factory.memory_service(spec)) is (await factory.memory_service(spec))
+
+
+async def test_unsupported_memory_type_raises():
+    factory = BackendFactory()
+    with pytest.raises(ValueError):
+        await factory.memory_service(BackendSpec(type="nosql"))
+
+
+async def test_artifact_in_memory():
+    factory = BackendFactory()
+    svc = await factory.artifact_service(BackendSpec(type="in_memory"))
+    assert isinstance(svc, InMemoryArtifactService)
+
+
+async def test_unsupported_artifact_type_raises():
+    factory = BackendFactory()
+    with pytest.raises(ValueError):
+        await factory.artifact_service(BackendSpec(type="object"))

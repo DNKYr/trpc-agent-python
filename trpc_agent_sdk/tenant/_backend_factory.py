@@ -9,6 +9,12 @@ from __future__ import annotations
 
 from typing import Optional
 
+from trpc_agent_sdk.abc import ArtifactServiceABC
+from trpc_agent_sdk.artifacts import InMemoryArtifactService
+from trpc_agent_sdk.memory import BaseMemoryService
+from trpc_agent_sdk.memory import InMemoryMemoryService
+from trpc_agent_sdk.memory import RedisMemoryService
+from trpc_agent_sdk.memory import SqlMemoryService
 from trpc_agent_sdk.sessions import BaseSessionService
 from trpc_agent_sdk.sessions import InMemorySessionService
 from trpc_agent_sdk.sessions import RedisSessionService
@@ -25,6 +31,8 @@ class BackendFactory:
         self._secret_store = secret_store
         self._is_async = is_async
         self._session_cache: dict[str, BaseSessionService] = {}
+        self._memory_cache: dict[str, BaseMemoryService] = {}
+        self._artifact_cache: dict[str, ArtifactServiceABC] = {}
 
     async def session_service(self, spec: BackendSpec) -> BaseSessionService:
         key = spec.model_dump_json()
@@ -35,7 +43,11 @@ class BackendFactory:
     async def close(self) -> None:
         for svc in list(self._session_cache.values()):
             await svc.close()
+        for svc in list(self._memory_cache.values()):
+            await svc.close()
         self._session_cache.clear()
+        self._memory_cache.clear()
+        self._artifact_cache.clear()
 
     async def _build_session(self, spec: BackendSpec) -> BaseSessionService:
         options = dict(spec.options)
@@ -50,6 +62,36 @@ class BackendFactory:
         if spec.type == "sql":
             return SqlSessionService(db_url=dsn, is_async=is_async, **options)
         raise ValueError(f"unsupported session backend type: {spec.type}")
+
+    async def memory_service(self, spec: BackendSpec) -> BaseMemoryService:
+        key = spec.model_dump_json()
+        if key not in self._memory_cache:
+            self._memory_cache[key] = await self._build_memory(spec)
+        return self._memory_cache[key]
+
+    async def artifact_service(self, spec: BackendSpec) -> ArtifactServiceABC:
+        key = spec.model_dump_json()
+        if key not in self._artifact_cache:
+            self._artifact_cache[key] = self._build_artifact(spec)
+        return self._artifact_cache[key]
+
+    async def _build_memory(self, spec: BackendSpec) -> BaseMemoryService:
+        options = dict(spec.options)
+        is_async = bool(options.pop("is_async", self._is_async))
+        enabled = bool(options.pop("enabled", True))
+        if spec.type == "in_memory":
+            return InMemoryMemoryService(enabled=enabled, **options)
+        dsn = await self._resolve_dsn(spec)
+        if spec.type == "redis":
+            return RedisMemoryService(db_url=dsn, is_async=is_async, enabled=enabled, **options)
+        if spec.type == "sql":
+            return SqlMemoryService(db_url=dsn, is_async=is_async, enabled=enabled, **options)
+        raise ValueError(f"unsupported memory backend type: {spec.type}")
+
+    def _build_artifact(self, spec: BackendSpec) -> ArtifactServiceABC:
+        if spec.type == "in_memory":
+            return InMemoryArtifactService()
+        raise ValueError(f"unsupported artifact backend type: {spec.type}")
 
     async def _resolve_dsn(self, spec: BackendSpec) -> str:
         dsn = spec.dsn or ""
