@@ -72,3 +72,9 @@ async def test_distinct_tenants_distinct_backends():
     assert isinstance(a, InMemorySessionService)
     assert isinstance(b, SqlSessionService)
     await adapter.close()
+
+
+def test_public_exports_backend():
+    import trpc_agent_sdk.tenant as tenant_pkg
+    assert hasattr(tenant_pkg, "BackendFactory")
+    assert hasattr(tenant_pkg, "StorageAdapter")

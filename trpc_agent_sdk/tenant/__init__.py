@@ -5,6 +5,7 @@
 # tRPC-Agent-Python is licensed under Apache-2.0.
 """Tenant model and isolation primitives."""
 
+from ._backend_factory import BackendFactory
 from ._errors import SecretNotFoundError
 from ._errors import TenantNotFoundError
 from ._masker import Masker
@@ -14,6 +15,7 @@ from ._registry import TenantSource
 from ._secret_store import EnvSecretStore
 from ._secret_store import InMemorySecretStore
 from ._secret_store import SecretStore
+from ._storage_adapter import StorageAdapter
 from ._tenant import AppConfig
 from ._tenant import AuditPolicy
 from ._tenant import BackendSpec
@@ -33,6 +35,7 @@ from ._tenant_source import StorageTenantVersion
 __all__ = [
     "AppConfig",
     "AuditPolicy",
+    "BackendFactory",
     "BackendSpec",
     "BudgetConfig",
     "ChannelBinding",
@@ -48,6 +51,7 @@ __all__ = [
     "SecretStore",
     "SensitiveDataFilter",
     "SqlTenantSource",
+    "StorageAdapter",
     "StorageTenant",
     "StorageTenantVersion",
     "Tenant",
