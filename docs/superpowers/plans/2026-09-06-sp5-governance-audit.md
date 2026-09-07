@@ -41,7 +41,7 @@ tests/tenant/
 - Create: `tests/tenant/test_audit.py`
 
 **Interfaces:**
-- Produces: `AuditEvent`（13 字段）、`AuditSink`（ABC：`async write(event)`/`async close()`）、`InMemoryAuditSink(max_entries=10000)`（`write`/`query(tenant_id=None)`/`close`）、`AuditLogger(sink, masker=None)`（`async log(event)`）。
+- Produces: `AuditEvent`（12 字段）、`AuditSink`（ABC：`async write(event)`/`async close()`）、`InMemoryAuditSink(max_entries=10000)`（`write`/`query(tenant_id=None)`/`close`）、`AuditLogger(sink, masker=None)`（`async log(event)`）。
 
 - [ ] **Step 1: 写失败测试**
 
