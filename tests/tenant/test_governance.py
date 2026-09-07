@@ -49,6 +49,29 @@ async def test_tool_filter_allowlist_blocks_unknown(monkeypatch):
     assert rsp.is_continue is False
 
 
+async def test_tool_filter_block_sets_error(monkeypatch):
+    flt = ToolPermissionFilter(ToolPermissions(denylist=["danger"]))
+    tool = MagicMock()
+    tool.name = "danger"
+    monkeypatch.setattr("trpc_agent_sdk.tenant._governance.get_tool_var", lambda: tool)
+    rsp = FilterResult()
+    await flt._before(None, None, rsp)
+    assert rsp.is_continue is False
+    assert rsp.error is not None
+
+
+async def test_budget_filter_reset():
+    flt = BudgetFilter(BudgetConfig(enabled=True, per_request_token_limit=10))
+    flt.add_tokens(11)
+    rsp = FilterResult()
+    await flt._before(None, None, rsp)
+    assert rsp.is_continue is False
+    flt.reset()
+    rsp2 = FilterResult()
+    await flt._before(None, None, rsp2)
+    assert rsp2.is_continue is True
+
+
 async def test_budget_filter_blocks_over_limit():
     flt = BudgetFilter(BudgetConfig(enabled=True, per_request_token_limit=10))
     flt.add_tokens(11)

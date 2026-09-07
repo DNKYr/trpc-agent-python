@@ -68,8 +68,11 @@ class InMemoryAuditSink(AuditSink):
         self._events.clear()
 
 
+_MASKABLE_FIELDS = ("agent_name", "tool_name")
+
+
 class AuditLogger:
-    """Mask string fields and write audit events to a sink."""
+    """Mask content-bearing fields and write audit events to a sink."""
 
     def __init__(self, sink: AuditSink, masker: Optional[Masker] = None):
         self._sink = sink
@@ -77,9 +80,11 @@ class AuditLogger:
 
     async def log(self, event: AuditEvent) -> None:
         if self._masker is not None:
-            event = event.model_copy(update={
-                field: self._masker.mask(str(value))
-                for field, value in event.model_dump().items()
-                if isinstance(value, str) and value
-            })
+            updates = {}
+            for field in _MASKABLE_FIELDS:
+                value = getattr(event, field, None)
+                if isinstance(value, str) and value:
+                    updates[field] = self._masker.mask(value)
+            if updates:
+                event = event.model_copy(update=updates)
         await self._sink.write(event)

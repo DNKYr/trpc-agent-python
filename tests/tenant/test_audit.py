@@ -38,6 +38,16 @@ async def test_audit_logger_masks_string_fields():
     assert written.agent_name == "[REDACTED]"
 
 
+async def test_audit_logger_preserves_identifiers():
+    masker = Masker(extra_patterns={"x": r"acme"})
+    sink = InMemoryAuditSink()
+    logger = AuditLogger(sink, masker=masker)
+    await logger.log(AuditEvent(tenant_id="acme", user_id="acme-user", agent_name="safe"))
+    written = (await sink.query())[0]
+    assert written.tenant_id == "acme"
+    assert written.user_id == "acme-user"
+
+
 async def test_audit_logger_without_masker():
     sink = InMemoryAuditSink()
     logger = AuditLogger(sink)

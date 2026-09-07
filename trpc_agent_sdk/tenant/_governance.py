@@ -24,6 +24,7 @@ class ToolPermissionFilter(BaseFilter):
         super().__init__()
         self._permissions = permissions
         self._type = FilterType.TOOL
+        self._name = "ToolPermissionFilter"
 
     async def _before(self, ctx, req, rsp: FilterResult):
         tool = get_tool_var()
@@ -32,9 +33,11 @@ class ToolPermissionFilter(BaseFilter):
         name = getattr(tool, "name", "")
         if name in self._permissions.denylist:
             rsp.is_continue = False
+            rsp.error = PermissionError(f"tool '{name}' is denylisted")
             return
         if not self._permissions.allow_all and self._permissions.allowlist and name not in self._permissions.allowlist:
             rsp.is_continue = False
+            rsp.error = PermissionError(f"tool '{name}' is not allowlisted")
             return
 
 
@@ -45,16 +48,22 @@ class BudgetFilter(BaseFilter):
         super().__init__()
         self._budgets = budgets
         self._type = FilterType.AGENT
+        self._name = "BudgetFilter"
         self._token_count = 0
 
     def add_tokens(self, count: int) -> None:
         """Accumulate token usage (called by the outer layer from usage_metadata)."""
         self._token_count += count
 
+    def reset(self) -> None:
+        """Reset the token count (call at the start of each request)."""
+        self._token_count = 0
+
     async def _before(self, ctx, req, rsp: FilterResult):
         limit = self._budgets.per_request_token_limit
         if limit is not None and self._token_count >= limit:
             rsp.is_continue = False
+            rsp.error = RuntimeError(f"budget exceeded: token_count={self._token_count} >= limit={limit}")
             return
 
 
