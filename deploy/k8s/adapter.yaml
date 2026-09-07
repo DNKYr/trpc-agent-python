@@ -1,0 +1,60 @@
+# IM Channel Adapter —— 企微/Telegram webhook 收发，按峰值扩容
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: channel-adapter
+  labels:
+    app: channel-adapter
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: channel-adapter
+  template:
+    metadata:
+      labels:
+        app: channel-adapter
+    spec:
+      containers:
+        - name: channel-adapter
+          image: trpc-agent-channel-adapter:latest
+          ports:
+            - containerPort: 8081
+          env:
+            - name: REDIS_URL
+              value: redis://redis:6379/0
+            - name: TENANT_SECRET_IM_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: tenant-secrets
+                  key: im_token
+            - name: TENANT_SECRET_IM_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: tenant-secrets
+                  key: im_secret
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: channel-adapter
+spec:
+  selector:
+    app: channel-adapter
+  ports:
+    - port: 8081
+      targetPort: 8081
+  type: LoadBalancer

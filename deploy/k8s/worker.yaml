@@ -1,0 +1,54 @@
+# Agent Worker —— 执行 Runner，无状态（Session/Memory 在共享后端），可横向扩容
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  labels:
+    app: worker
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: worker
+  template:
+    metadata:
+      labels:
+        app: worker
+    spec:
+      containers:
+        - name: worker
+          image: trpc-agent-worker:latest
+          env:
+            - name: REDIS_URL
+              value: redis://redis:6379/0
+            - name: SQL_URL
+              valueFrom:
+                secretKeyRef:
+                  name: tenant-secrets
+                  key: sql_url
+            - name: TENANT_SOURCE
+              value: sql
+            - name: TENANT_SECRET_MODEL_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: tenant-secrets
+                  key: model_api_key
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: worker
+spec:
+  selector:
+    app: worker
+  ports:
+    - port: 9090
+      targetPort: 9090
+  type: ClusterIP

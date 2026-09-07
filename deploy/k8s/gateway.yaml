@@ -1,0 +1,62 @@
+# Agent Gateway —— 入口/路由/限流，无状态，可横向扩容
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  labels:
+    app: gateway
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: gateway
+  template:
+    metadata:
+      labels:
+        app: gateway
+    spec:
+      containers:
+        - name: gateway
+          image: trpc-agent-gateway:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: REDIS_URL
+              value: redis://redis:6379/0
+            - name: SQL_URL
+              valueFrom:
+                secretKeyRef:
+                  name: tenant-secrets
+                  key: sql_url
+            - name: TENANT_SOURCE
+              value: sql
+            - name: TENANT_SECRET_MODEL_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: tenant-secrets
+                  key: model_api_key
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway
+spec:
+  selector:
+    app: gateway
+  ports:
+    - port: 8080
+      targetPort: 8080
+  type: ClusterIP

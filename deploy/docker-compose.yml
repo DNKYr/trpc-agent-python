@@ -1,0 +1,78 @@
+# tRPC-Agent 多租户最小可运行部署（Docker Compose）
+#
+# 组件：
+#   gateway          - Agent Gateway：租户解析、鉴权、限流、路由
+#   worker           - Agent Worker：执行 Runner（无状态，可横向扩容）
+#   channel-adapter  - IM Channel Adapter：企微/Telegram webhook 收发
+#   redis            - Session/Memory/Dedup 共享后端
+#   mysql            - Session(SQL)/Audit/Tenant 配置后端
+#
+# 说明：gateway/worker/channel-adapter 镜像基于本 SDK 构建（应用层），
+#       此处为最小拓扑示例；密钥经环境变量注入（对应 SecretStore Env 后端）。
+
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: trpc_agent
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+  gateway:
+    image: trpc-agent-gateway:latest
+    restart: unless-stopped
+    depends_on:
+      - redis
+      - mysql
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      SQL_URL: mysql+pymysql://root:${MYSQL_ROOT_PASSWORD:-root}@mysql:3306/trpc_agent
+      TENANT_SOURCE: sql
+      TENANT_SECRET_MODEL_API_KEY: ${MODEL_API_KEY}
+      TENANT_SECRET_IM_TOKEN: ${IM_TOKEN}
+      TENANT_SECRET_IM_SECRET: ${IM_SECRET}
+    ports:
+      - "8080:8080"
+
+  worker:
+    image: trpc-agent-worker:latest
+    restart: unless-stopped
+    depends_on:
+      - redis
+      - mysql
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      SQL_URL: mysql+pymysql://root:${MYSQL_ROOT_PASSWORD:-root}@mysql:3306/trpc_agent
+      TENANT_SOURCE: sql
+      TENANT_SECRET_MODEL_API_KEY: ${MODEL_API_KEY}
+    deploy:
+      replicas: 2
+
+  channel-adapter:
+    image: trpc-agent-channel-adapter:latest
+    restart: unless-stopped
+    depends_on:
+      - redis
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      TENANT_SECRET_IM_TOKEN: ${IM_TOKEN}
+      TENANT_SECRET_IM_SECRET: ${IM_SECRET}
+    ports:
+      - "8081:8081"
+
+volumes:
+  redis-data:
+  mysql-data:
