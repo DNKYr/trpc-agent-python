@@ -134,10 +134,17 @@ class RunnerPool:
         cached = self._runners.get(tenant_id)
         if cached is not None and self._versions.get(tenant_id) == tenant.version:
             return cached
-        runner = await self._factory.build_runner(tenant_id)
-        self._runners[tenant_id] = runner
-        self._versions[tenant_id] = tenant.version
-        return runner
+        lock = self._locks.setdefault(tenant_id, asyncio.Lock())
+        async with lock:
+            cached = self._runners.get(tenant_id)
+            if cached is not None and self._versions.get(tenant_id) == tenant.version:
+                return cached
+            if cached is not None:
+                await cached.close()          # 替换前关闭旧 runner（不关共享服务）
+            runner = await self._factory.build_runner(tenant_id)
+            self._runners[tenant_id] = runner
+            self._versions[tenant_id] = tenant.version
+            return runner
 
     async def close(self) -> None:
         for runner in self._runners.values():
@@ -148,7 +155,9 @@ class RunnerPool:
 
 **要点：**
 - 首次 `get_runner` 懒构建；`tenant.version` 变化时重建（配置热更新）。
-- `close` 只关 Runner（`Runner.close` 不会关共享 session/memory 服务，因上面传了 `close_*_on_close=False`）。
+- **配置变更失效（补齐 SP2 限制 #1）**：`StorageAdapter` 的三个服务 getter 改为按 `tenant.version` 失效（版本变化时重建后端，见 SP2 补丁）；`RunnerPool` 同步按版本重建 Runner。因此 `data_backends` 变更（如 Redis→SQL）会拿到新后端。
+- **替换时关闭旧 runner**：重建前 `await cached.close()`（`Runner.close` 不会关共享 session/memory 服务）。
+- **并发去重**：每租户 `asyncio.Lock` 双检锁，避免首次/变更时的重复构建与泄漏。
 - 路由到正确 session 由 SDK `Runner.run_async(user_id, session_id, new_message)` 完成——session 由 `app_name=tenant.sdk_app_name` 命名空间隔离，Gateway 只需拿到正确 tenant 的 `Runner` 再调用 `run_async`。
 
 ---
@@ -169,4 +178,4 @@ class RunnerPool:
 1. **范围**：仅进程内 runner 构建 + 路由（`TenantAgentFactory` + `RunnerPool`）；网络拓扑/HTTP/Worker 留 SP6。
 2. **agent name**：`_agent_name(tenant_id)` 规范化，不用含 `:` 的 `sdk_app_name`。
 3. **模型构建**：`ModelRegistry.create_model`（按 `model_name` 解析）；`provider` 仅信息用。
-4. **配置变更失效**：`RunnerPool` 按 `tenant.version` 缓存键。
+4. **配置变更失效**：`StorageAdapter` 后端缓存与 `RunnerPool` 均按 `tenant.version` 失效，`data_backends`/模型/工具变更均重建（补齐 SP2 限制 #1）。
