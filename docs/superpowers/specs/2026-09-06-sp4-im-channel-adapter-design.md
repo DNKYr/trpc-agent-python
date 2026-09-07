@@ -22,7 +22,7 @@
 
 3. **user_id 映射**：SP4 默认 `user_id = sender_id`（外部 ID 直通）；映射表（外部→内部）留后续 SP。
 
-4. **去重**：`(channel, external_msg_id)` 幂等，`InMemoryDedupStore` 带 TTL（默认取 `ChannelBinding.dedup_ttl_seconds`，缺省 300s）。生产可用 Redis 替换（接口一致）。
+4. **去重**：`(channel, chat_id, external_msg_id)` 幂等（Telegram `message_id` 是 per-chat 计数器，须含 `chat_id` 才全局唯一），`InMemoryDedupStore` 带 TTL（默认取 `ChannelBinding.dedup_ttl_seconds`，缺省 300s）。生产可用 Redis 替换（接口一致）。
 
 5. **验签算法**：
    - WeCom：GET 回调验证 `msg_signature = sha1(sort(token, timestamp, nonce, echostr))`。
@@ -136,9 +136,10 @@ class ChannelAdapter(ABC):
 
 ```python
 class InMemoryDedupStore:
-    """(channel, external_msg_id) 去重，带 TTL。"""
+    """(channel, chat_id, external_msg_id) 去重，带 TTL。"""
     def __init__(self, default_ttl_seconds: float = 300.0): ...
-    def seen(self, channel: str, msg_id: str, ttl_seconds: float | None = None) -> bool:
+    def seen(self, channel: str, chat_id: str, msg_id: str,
+             ttl_seconds: float | None = None) -> bool:
         """首次返回 False（记录），重复返回 True。"""
 
 
@@ -162,9 +163,9 @@ class ChannelRouter:
         """
         1. 按 (channel_type, platform_id) 定位 ChannelBinding → tenant
         2. adapter = adapters[channel_type]
-        3. 解析 token/secret（SecretStore）→ adapter.verify_signature，失败抛 AuthenticationError
+        3. 解析 token/secret（SecretStore）；若 binding.verify_enabled 则 adapter.verify_signature，失败抛 AuthenticationError
         4. inbound = adapter.parse_inbound(raw)
-        5. dedup.seen(channel_type, inbound.external_msg_id)，重复抛 DuplicateMessageError
+        5. dedup.seen(channel_type, inbound.chat_id, inbound.external_msg_id, ttl_seconds=binding.dedup_ttl_seconds)，重复抛 DuplicateMessageError
         6. user_id = adapter.user_id(inbound)；session_id = adapter.session_id(inbound)
         7. content = content_from_text(inbound.text)
         8. return RoutedMessage(...)
