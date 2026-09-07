@@ -7,10 +7,7 @@
 
 from unittest.mock import MagicMock
 
-import pytest
-
 from trpc_agent_sdk.abc import FilterResult
-from trpc_agent_sdk.abc import FilterType
 
 from trpc_agent_sdk.tenant._governance import BudgetFilter
 from trpc_agent_sdk.tenant._governance import TenantFilterFactory
