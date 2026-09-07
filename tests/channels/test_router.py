@@ -82,3 +82,11 @@ async def test_route_unknown_binding():
     with pytest.raises(ValueError):
         await router.route(channel_type="telegram", platform_id="unknown", raw=raw,
                            signature=secret, timestamp="", nonce="")
+
+
+def test_public_exports_channels():
+    import trpc_agent_sdk.channels as channels
+    for name in ("ChannelAdapter", "WecomAdapter", "TelegramAdapter", "ChannelRouter",
+                 "InMemoryDedupStore", "InboundMessage", "OutboundMessage",
+                 "content_from_text", "event_to_text", "AuthenticationError", "DuplicateMessageError"):
+        assert hasattr(channels, name), f"missing export: {name}"
