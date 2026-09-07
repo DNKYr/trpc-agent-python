@@ -27,15 +27,16 @@ from ._messages import content_from_text
 
 
 class InMemoryDedupStore:
-    """Deduplicate (channel, external_msg_id) pairs with a TTL."""
+    """Deduplicate (channel, chat_id, external_msg_id) triples with a TTL."""
 
     def __init__(self, default_ttl_seconds: float = 300.0):
         self._default_ttl_seconds = default_ttl_seconds
-        self._seen: dict[tuple[str, str], float] = {}
+        self._seen: dict[tuple[str, str, str], float] = {}
 
-    def seen(self, channel: str, msg_id: str, ttl_seconds: Optional[float] = None) -> bool:
+    def seen(self, channel: str, chat_id: str, msg_id: str,
+             ttl_seconds: Optional[float] = None) -> bool:
         """Return True if the message was already seen; otherwise record it and return False."""
-        key = (channel, msg_id)
+        key = (channel, chat_id, msg_id)
         now = time.monotonic()
         expiry = self._seen.get(key)
         if expiry is not None and now < expiry:
@@ -71,13 +72,15 @@ class ChannelRouter:
         if adapter is None:
             raise ValueError(f"unsupported channel type: {channel_type}")
         tenant, binding = await self._resolve_binding(channel_type, platform_id)
-        token = await self._secret_store.get(binding.token_ref) if binding.token_ref else ""
-        secret = await self._secret_store.get(binding.secret_ref) if binding.secret_ref else ""
-        if not adapter.verify_signature(token=token, secret=secret, signature=signature,
-                                        timestamp=timestamp, nonce=nonce, payload=payload):
-            raise AuthenticationError(channel_type)
+        if binding.verify_enabled:
+            token = await self._secret_store.get(binding.token_ref) if binding.token_ref else ""
+            secret = await self._secret_store.get(binding.secret_ref) if binding.secret_ref else ""
+            if not adapter.verify_signature(token=token, secret=secret, signature=signature,
+                                            timestamp=timestamp, nonce=nonce, payload=payload):
+                raise AuthenticationError(channel_type)
         inbound = adapter.parse_inbound(raw)
-        if self._dedup.seen(channel_type, inbound.external_msg_id):
+        if self._dedup.seen(channel_type, inbound.chat_id, inbound.external_msg_id,
+                            ttl_seconds=binding.dedup_ttl_seconds):
             raise DuplicateMessageError(channel_type, inbound.external_msg_id)
         return RoutedMessage(tenant_id=tenant.tenant_id,
                              user_id=adapter.user_id(inbound),
