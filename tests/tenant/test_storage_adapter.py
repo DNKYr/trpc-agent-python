@@ -74,6 +74,20 @@ async def test_distinct_tenants_distinct_backends():
     await adapter.close()
 
 
+async def test_session_service_rebuilds_on_backend_change():
+    source = InMemoryTenantSource()
+    await source.put(_tenant("acme", data_backends=DataBackendConfig(session=BackendSpec(type="in_memory"))))
+    registry = TenantRegistry(source)
+    adapter = StorageAdapter(registry, BackendFactory())
+    first = await adapter.session_service("acme")
+    sql_backends = DataBackendConfig(session=BackendSpec(type="sql", dsn="sqlite:///:memory:"))
+    await registry.put(_tenant("acme", data_backends=sql_backends))
+    second = await adapter.session_service("acme")
+    assert first is not second
+    assert isinstance(second, SqlSessionService)
+    await adapter.close()
+
+
 def test_public_exports_backend():
     import trpc_agent_sdk.tenant as tenant_pkg
     assert hasattr(tenant_pkg, "BackendFactory")

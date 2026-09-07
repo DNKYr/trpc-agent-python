@@ -57,6 +57,24 @@ async def test_get_runner_missing_tenant_raises():
         await pool.get_runner("nope")
 
 
+async def test_get_runner_closes_old_on_rebuild():
+    pool, source, registry, _ = _make_pool()
+    await source.put(_tenant(version=1))
+    old = await pool.get_runner("acme")
+    await registry.put(_tenant(version=1))  # version -> 2
+    new = await pool.get_runner("acme")
+    assert old is not new
+    old.close.assert_awaited_once()
+
+
+async def test_concurrent_get_runner_builds_once():
+    import asyncio
+    pool, source, _, factory = _make_pool()
+    await source.put(_tenant())
+    await asyncio.gather(pool.get_runner("acme"), pool.get_runner("acme"))
+    assert factory.build_runner.await_count == 1
+
+
 async def test_close_clears_cache():
     pool, source, _, _ = _make_pool()
     await source.put(_tenant())

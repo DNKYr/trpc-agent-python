@@ -27,23 +27,29 @@ class StorageAdapter:
         self._session_cache: dict[str, BaseSessionService] = {}
         self._memory_cache: dict[str, BaseMemoryService] = {}
         self._artifact_cache: dict[str, ArtifactServiceABC] = {}
+        self._session_versions: dict[str, int] = {}
+        self._memory_versions: dict[str, int] = {}
+        self._artifact_versions: dict[str, int] = {}
 
     async def session_service(self, tenant_id: str) -> BaseSessionService:
         tenant = await self._get_tenant(tenant_id)
-        if tenant_id not in self._session_cache:
+        if self._session_versions.get(tenant_id) != tenant.version:
             self._session_cache[tenant_id] = await self._factory.session_service(tenant.data_backends.session)
+            self._session_versions[tenant_id] = tenant.version
         return self._session_cache[tenant_id]
 
     async def memory_service(self, tenant_id: str) -> BaseMemoryService:
         tenant = await self._get_tenant(tenant_id)
-        if tenant_id not in self._memory_cache:
+        if self._memory_versions.get(tenant_id) != tenant.version:
             self._memory_cache[tenant_id] = await self._factory.memory_service(tenant.data_backends.memory)
+            self._memory_versions[tenant_id] = tenant.version
         return self._memory_cache[tenant_id]
 
     async def artifact_service(self, tenant_id: str) -> ArtifactServiceABC:
         tenant = await self._get_tenant(tenant_id)
-        if tenant_id not in self._artifact_cache:
+        if self._artifact_versions.get(tenant_id) != tenant.version:
             self._artifact_cache[tenant_id] = await self._factory.artifact_service(tenant.data_backends.artifact)
+            self._artifact_versions[tenant_id] = tenant.version
         return self._artifact_cache[tenant_id]
 
     async def migrate_session(self, *, tenant_id: str,

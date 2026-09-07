@@ -7,6 +7,8 @@
 
 from __future__ import annotations
 
+import asyncio
+
 from trpc_agent_sdk.runners import Runner
 
 from ._agent_factory import TenantAgentFactory
@@ -22,6 +24,7 @@ class RunnerPool:
         self._factory = factory
         self._runners: dict[str, Runner] = {}
         self._versions: dict[str, int] = {}
+        self._locks: dict[str, asyncio.Lock] = {}
 
     async def get_runner(self, tenant_id: str) -> Runner:
         tenant = await self._registry.get(tenant_id)
@@ -30,10 +33,17 @@ class RunnerPool:
         cached = self._runners.get(tenant_id)
         if cached is not None and self._versions.get(tenant_id) == tenant.version:
             return cached
-        runner = await self._factory.build_runner(tenant_id)
-        self._runners[tenant_id] = runner
-        self._versions[tenant_id] = tenant.version
-        return runner
+        lock = self._locks.setdefault(tenant_id, asyncio.Lock())
+        async with lock:
+            cached = self._runners.get(tenant_id)
+            if cached is not None and self._versions.get(tenant_id) == tenant.version:
+                return cached
+            if cached is not None:
+                await cached.close()
+            runner = await self._factory.build_runner(tenant_id)
+            self._runners[tenant_id] = runner
+            self._versions[tenant_id] = tenant.version
+            return runner
 
     async def close(self) -> None:
         for runner in self._runners.values():
