@@ -43,3 +43,10 @@ async def test_audit_logger_without_masker():
     logger = AuditLogger(sink)
     await logger.log(AuditEvent(tenant_id="acme", user_id="u1"))
     assert (await sink.query())[0].user_id == "u1"
+
+
+def test_public_exports_governance():
+    import trpc_agent_sdk.tenant as tenant_pkg
+    for name in ("AuditEvent", "AuditSink", "InMemoryAuditSink", "AuditLogger",
+                 "ToolPermissionFilter", "BudgetFilter", "TenantFilterFactory"):
+        assert hasattr(tenant_pkg, name), f"missing export: {name}"

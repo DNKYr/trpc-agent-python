@@ -6,9 +6,16 @@
 """Tenant model and isolation primitives."""
 
 from ._agent_factory import TenantAgentFactory
+from ._audit import AuditEvent
+from ._audit import AuditLogger
+from ._audit import AuditSink
+from ._audit import InMemoryAuditSink
 from ._backend_factory import BackendFactory
 from ._errors import SecretNotFoundError
 from ._errors import TenantNotFoundError
+from ._governance import BudgetFilter
+from ._governance import TenantFilterFactory
+from ._governance import ToolPermissionFilter
 from ._masker import Masker
 from ._masker import SensitiveDataFilter
 from ._registry import TenantRegistry
@@ -36,14 +43,19 @@ from ._tenant_source import StorageTenantVersion
 
 __all__ = [
     "AppConfig",
+    "AuditEvent",
+    "AuditLogger",
     "AuditPolicy",
+    "AuditSink",
     "BackendFactory",
     "BackendSpec",
     "BudgetConfig",
+    "BudgetFilter",
     "ChannelBinding",
     "DataBackendConfig",
     "EnvSecretStore",
     "FileTenantSource",
+    "InMemoryAuditSink",
     "InMemorySecretStore",
     "InMemoryTenantSource",
     "Masker",
@@ -59,8 +71,10 @@ __all__ = [
     "StorageTenantVersion",
     "Tenant",
     "TenantAgentFactory",
+    "TenantFilterFactory",
     "TenantNotFoundError",
     "TenantRegistry",
     "TenantSource",
+    "ToolPermissionFilter",
     "ToolPermissions",
 ]
