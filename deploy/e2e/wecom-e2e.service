@@ -1,0 +1,15 @@
+[Unit]
+Description=WeCom E2E bot (tRPC-Agent multi-tenant)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/trpc-agent/examples/wecom_e2e
+ExecStart=/home/ubuntu/trpc-agent/.venv/bin/python -m uvicorn main:app --host 0.0.0.0 --port 8080
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

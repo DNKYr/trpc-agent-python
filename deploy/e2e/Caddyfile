@@ -1,0 +1,7 @@
+# Caddy HTTPS 反向代理（WeCom 回调必须 HTTPS）
+# 使用：把 <域名> 换成你的域名并指向本服务器，Caddy 自动签 Let's Encrypt。
+# 运行：sudo caddy run --config deploy/e2e/Caddyfile
+
+<YOUR_DOMAIN> {
+    reverse_proxy 127.0.0.1:8080
+}

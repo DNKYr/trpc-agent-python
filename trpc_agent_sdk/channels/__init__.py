@@ -18,6 +18,7 @@ from ._router import InMemoryDedupStore
 from ._router import RoutedMessage
 from ._telegram import TelegramAdapter
 from ._wecom import WecomAdapter
+from ._wecom_crypto import WeComCrypto
 
 __all__ = [
     "AuthenticationError",
@@ -30,6 +31,7 @@ __all__ = [
     "OutboundMessage",
     "RoutedMessage",
     "TelegramAdapter",
+    "WeComCrypto",
     "WecomAdapter",
     "content_from_text",
     "event_to_text",
