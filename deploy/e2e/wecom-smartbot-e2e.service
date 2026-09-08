@@ -1,0 +1,15 @@
+[Unit]
+Description=WeCom SmartBot E2E (long connection)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/trpc-agent/examples/wecom_smartbot_e2e
+ExecStart=/home/ubuntu/trpc-agent/.venv/bin/python main.py
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

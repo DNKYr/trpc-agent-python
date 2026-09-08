@@ -14,7 +14,7 @@ cd "${APP_DIR}"
 python3 -m venv .venv
 .venv/bin/pip install --upgrade pip
 .venv/bin/pip install -e .
-.venv/bin/pip install fastapi   # WeCom 回调服务额外依赖（非 SDK 核心）
+.venv/bin/pip install fastapi wecom-aibot-python-sdk   # WeCom 回调/SmartBot 额外依赖
 
 echo "==> 生成 .env 模板（请手动填入密钥）"
 if [ ! -f examples/telegram_e2e/.env ]; then
@@ -23,15 +23,20 @@ fi
 if [ ! -f examples/wecom_e2e/.env ]; then
     cp examples/wecom_e2e/.env.example examples/wecom_e2e/.env
 fi
+if [ ! -f examples/wecom_smartbot_e2e/.env ]; then
+    cp examples/wecom_smartbot_e2e/.env.example examples/wecom_smartbot_e2e/.env
+fi
 
 echo "==> 安装 systemd 服务"
 sudo cp deploy/e2e/telegram-e2e.service /etc/systemd/system/telegram-e2e.service
 sudo cp deploy/e2e/wecom-e2e.service /etc/systemd/system/wecom-e2e.service
+sudo cp deploy/e2e/wecom-smartbot-e2e.service /etc/systemd/system/wecom-smartbot-e2e.service
 sudo systemctl daemon-reload
-sudo systemctl enable telegram-e2e wecom-e2e
+sudo systemctl enable telegram-e2e wecom-e2e wecom-smartbot-e2e
 
 echo
 echo "完成。下一步："
-echo "  Telegram: 编辑 examples/telegram_e2e/.env -> sudo systemctl start telegram-e2e"
-echo "  WeCom:    编辑 examples/wecom_e2e/.env -> 配置 Caddy 反代 -> sudo systemctl start wecom-e2e"
-echo "  查看日志: journalctl -u telegram-e2e -f / journalctl -u wecom-e2e -f"
+echo "  Telegram:    编辑 examples/telegram_e2e/.env -> sudo systemctl start telegram-e2e"
+echo "  WeCom 回调:  编辑 examples/wecom_e2e/.env -> 配置 Caddy -> sudo systemctl start wecom-e2e"
+echo "  WeCom 长连接:编辑 examples/wecom_smartbot_e2e/.env -> sudo systemctl start wecom-smartbot-e2e"
+echo "  查看日志: journalctl -u telegram-e2e -f / wecom-e2e -f / wecom-smartbot-e2e -f"
