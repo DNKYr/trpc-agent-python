@@ -13,6 +13,9 @@ dist
 .venv
 venv
 venv*
+.env
+.env.*
+!.env.example
 __pycache__
 
 .coverage

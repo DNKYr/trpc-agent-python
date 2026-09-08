@@ -26,6 +26,7 @@ import asyncio
 import os
 
 import httpx
+from dotenv import load_dotenv
 
 from trpc_agent_sdk.channels import ChannelRouter
 from trpc_agent_sdk.channels import InMemoryDedupStore
@@ -43,10 +44,13 @@ from trpc_agent_sdk.tenant import Tenant
 from trpc_agent_sdk.tenant import TenantAgentFactory
 from trpc_agent_sdk.tenant import TenantRegistry
 
+load_dotenv()
+
 TELEGRAM_BOT_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
 BOT_USERNAME = os.environ.get("TELEGRAM_BOT_USERNAME", "e2e_bot")
-MODEL_PROVIDER = os.environ.get("MODEL_PROVIDER", "openai")
-MODEL_NAME = os.environ.get("MODEL_NAME", "gpt-4o-mini")
+MODEL_PROVIDER = os.environ.get("MODEL_PROVIDER", "deepseek")
+MODEL_NAME = os.environ.get("MODEL_NAME", "deepseek-v4-flash")
+MODEL_ENDPOINT = os.environ.get("MODEL_ENDPOINT", "https://api.deepseek.com")
 MODEL_API_KEY = os.environ["MODEL_API_KEY"]
 TENANT_ID = os.environ.get("TENANT_ID", "e2e")
 
@@ -56,7 +60,8 @@ TELEGRAM_API = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}"
 def build_tenant() -> Tenant:
     return Tenant(
         tenant_id=TENANT_ID,
-        model_settings=ModelConfig(provider=MODEL_PROVIDER, model_name=MODEL_NAME, api_key_ref="model_key"),
+        model_settings=ModelConfig(provider=MODEL_PROVIDER, model_name=MODEL_NAME,
+                                   endpoint=MODEL_ENDPOINT, api_key_ref="model_key"),
         data_backends=DataBackendConfig(
             session=BackendSpec(type="in_memory"),
             memory=BackendSpec(type="in_memory"),

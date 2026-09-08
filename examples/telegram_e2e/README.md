@@ -11,12 +11,11 @@
 
 ## 运行
 
-```bash
-export TELEGRAM_BOT_TOKEN=123456:ABC...
-export MODEL_API_KEY=sk-...
-export MODEL_NAME=gpt-4o-mini        # 可选，默认 gpt-4o-mini
-export TELEGRAM_BOT_USERNAME=my_bot  # 可选，默认 e2e_bot
+1. 复制 `.env.example` 为 `.env`，填入 `TELEGRAM_BOT_TOKEN` 与 `MODEL_API_KEY`（`MODEL_NAME` 默认 `deepseek-v4-flash`，`MODEL_ENDPOINT` 默认 `https://api.deepseek.com`）。
 
+```bash
+cp examples/telegram_e2e/.env.example examples/telegram_e2e/.env
+# 编辑 .env 填入 TELEGRAM_BOT_TOKEN 与 MODEL_API_KEY
 python examples/telegram_e2e/main.py
 ```
 
@@ -25,5 +24,6 @@ python examples/telegram_e2e/main.py
 ## 说明
 
 - 复用 SP4 `TelegramAdapter`（解析）+ `ChannelRouter`（去重/映射，`verify_enabled=False` 因为 polling 无签名）+ SP3 `RunnerPool`（执行）。
+- 模型：DeepSeek（`deepseek-v4-flash`，OpenAI 兼容，经 SDK `OpenAIModel` + `DeepSeekAdapter` 解析）。
 - 会话：单聊 `session_id = chat_telegram_{chat_id}`；数据后端 `in_memory`（重启即清，联调够用，可换 Redis）。
 - 收到非文本消息（图片/文件）会跳过。
