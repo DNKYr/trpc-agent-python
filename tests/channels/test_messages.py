@@ -34,6 +34,16 @@ def test_event_to_text_concatenates_parts():
     assert event_to_text(event) == "foobar"
 
 
+def test_event_to_text_excludes_thought_parts():
+    thought = Part.from_text(text="internal reasoning")
+    thought.thought = True
+    answer = Part.from_text(text="visible answer")
+    answer.thought = False
+    event = Event(invocation_id="i1", author="agent",
+                  content=Content(parts=[thought, answer]))
+    assert event_to_text(event) == "visible answer"
+
+
 def test_inbound_message_fields():
     msg = InboundMessage(channel="wecom", external_msg_id="m1", chat_type="group",
                          chat_id="room1", sender_id="u1", text="hi", timestamp=1.0)

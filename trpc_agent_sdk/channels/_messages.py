@@ -43,5 +43,12 @@ def content_from_text(text: str) -> Content:
 
 
 def event_to_text(event: Event) -> str:
-    """Concatenate all text parts of an event."""
-    return event.get_text()
+    """Concatenate the visible (non-thought) text parts of an event.
+
+    Reasoning models (e.g. DeepSeek v4) return ``reasoning_content`` which the
+    SDK marks as ``thought=True`` parts; ``event.get_text()`` concatenates both
+    and would leak the chain-of-thought into IM replies. Exclude thought parts.
+    """
+    if not event.content or not event.content.parts:
+        return ""
+    return "".join(part.text for part in event.content.parts if part.text and not part.thought)

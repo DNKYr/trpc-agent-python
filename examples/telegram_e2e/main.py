@@ -60,6 +60,38 @@ TENANT_ID = os.environ.get("TENANT_ID", "e2e")
 
 TELEGRAM_API = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}"
 
+# Telegram sendMessage caps text at 4096 characters.
+TELEGRAM_MAX_TEXT_LENGTH = 4096
+
+
+def event_reply_text(event) -> str:
+    """Extract the visible reply text, excluding the model's reasoning (thought) parts.
+
+    DeepSeek v4 (and other reasoning models) return ``reasoning_content``
+    alongside ``content``; the SDK marks the former as a ``thought=True`` part.
+    ``event.get_text()`` concatenates both, which leaks the chain-of-thought.
+    """
+    if not event.content or not event.content.parts:
+        return ""
+    return "".join(part.text for part in event.content.parts if part.text and not part.thought)
+
+
+def split_text(text: str, limit: int = 4000) -> list[str]:
+    """Split text into chunks under ``limit`` chars, preferring newline boundaries."""
+    if len(text) <= limit:
+        return [text]
+    chunks = []
+    remaining = text
+    while len(remaining) > limit:
+        cut = remaining.rfind("\n", 0, limit)
+        if cut <= 0:
+            cut = limit
+        chunks.append(remaining[:cut])
+        remaining = remaining[cut:].lstrip("\n")
+    if remaining:
+        chunks.append(remaining)
+    return chunks
+
 
 def build_tenant() -> Tenant:
     return Tenant(
@@ -153,13 +185,18 @@ async def run_and_reply(pool: RunnerPool, client: httpx.AsyncClient, routed, cha
     ):
         if event.partial or event.author == "user":
             continue
-        text = event.get_text()
+        text = event_reply_text(event)
         if text:
             final_text = text
 
-    if final_text:
-        await client.post(f"{TELEGRAM_API}/sendMessage", json={"chat_id": chat_id, "text": final_text})
-        logger.info("replied chat=%s (%d chars)", chat_id, len(final_text))
+    if not final_text:
+        logger.info("no reply text for chat=%s", chat_id)
+        return
+
+    for chunk in split_text(final_text, limit=TELEGRAM_MAX_TEXT_LENGTH - 96):
+        resp = await client.post(f"{TELEGRAM_API}/sendMessage", json={"chat_id": chat_id, "text": chunk})
+        resp.raise_for_status()
+        logger.info("replied chat=%s (%d chars)", chat_id, len(chunk))
 
 
 if __name__ == "__main__":
