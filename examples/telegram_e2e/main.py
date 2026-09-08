@@ -23,6 +23,7 @@ Environment variables:
 from __future__ import annotations
 
 import asyncio
+import logging
 import os
 
 import httpx
@@ -45,6 +46,9 @@ from trpc_agent_sdk.tenant import TenantAgentFactory
 from trpc_agent_sdk.tenant import TenantRegistry
 
 load_dotenv()
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+logger = logging.getLogger("telegram_e2e")
 
 TELEGRAM_BOT_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
 BOT_USERNAME = os.environ.get("TELEGRAM_BOT_USERNAME", "e2e_bot")
@@ -103,7 +107,7 @@ async def main() -> None:
                 resp.raise_for_status()
                 updates = resp.json().get("result", [])
             except httpx.HTTPError as ex:
-                print(f"getUpdates failed: {ex}")
+                logger.warning("getUpdates failed: %s", ex)
                 await asyncio.sleep(5)
                 continue
 
@@ -122,14 +126,16 @@ async def main() -> None:
                         nonce="",
                     )
                 except Exception as ex:  # duplicate / parse / binding errors
-                    print(f"route skipped: {type(ex).__name__}: {ex}")
+                    logger.info("route skipped (%s): %s", type(ex).__name__, ex)
                     continue
 
                 chat_id = routed.inbound.chat_id
+                logger.info("message user=%s session=%s chat=%s: %r",
+                            routed.user_id, routed.session_id, chat_id, routed.inbound.text)
                 try:
                     await run_and_reply(pool, client, routed, chat_id)
                 except Exception as ex:
-                    print(f"run failed: {type(ex).__name__}: {ex}")
+                    logger.error("run failed: %s", ex, exc_info=True)
                     await client.post(
                         f"{TELEGRAM_API}/sendMessage",
                         json={"chat_id": chat_id, "text": f"error: {type(ex).__name__}"},
@@ -153,6 +159,7 @@ async def run_and_reply(pool: RunnerPool, client: httpx.AsyncClient, routed, cha
 
     if final_text:
         await client.post(f"{TELEGRAM_API}/sendMessage", json={"chat_id": chat_id, "text": final_text})
+        logger.info("replied chat=%s (%d chars)", chat_id, len(final_text))
 
 
 if __name__ == "__main__":
