@@ -119,7 +119,7 @@ async def main() -> None:
         chattype = body.get("chattype", "single") or "single"
         chatid = body.get("chatid") or userid
 
-        if msgid and dedup.seen("wecom_smartbot", msgid):
+        if msgid and dedup.seen("wecom_smartbot", str(chatid), msgid):
             return
 
         logger.info("message user=%s chattype=%s chatid=%s msgid=%s: %r",
