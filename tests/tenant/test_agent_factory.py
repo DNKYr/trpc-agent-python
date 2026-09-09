@@ -46,8 +46,7 @@ async def test_build_model_injects_api_key_and_base_url():
     registry = TenantRegistry(source)
     storage = StorageAdapter(registry, BackendFactory())
     factory = TenantAgentFactory(registry, storage, store, {})
-    config = ModelConfig(provider="openai", model_name="gpt-4o",
-                         api_key_ref="key", endpoint="https://api.example.com")
+    config = ModelConfig(provider="openai", model_name="gpt-4o", api_key_ref="key", endpoint="https://api.example.com")
     with patch("trpc_agent_sdk.tenant._agent_factory.ModelRegistry.create_model") as mock_create:
         mock_create.return_value = object()
         await factory._build_model(config)
@@ -76,9 +75,10 @@ async def test_build_runner_end_to_end():
         memory=BackendSpec(type="in_memory"),
         artifact=BackendSpec(type="in_memory"),
     )
-    await source.put(Tenant(tenant_id="acme",
-                            model_settings=ModelConfig(provider="openai", model_name="gpt-4o"),
-                            data_backends=backends))
+    await source.put(
+        Tenant(tenant_id="acme",
+               model_settings=ModelConfig(provider="openai", model_name="gpt-4o"),
+               data_backends=backends))
     factory, _, storage = _make_factory(source=source)
     runner = await factory.build_runner("acme")
     assert runner.app_name == "acme:default"

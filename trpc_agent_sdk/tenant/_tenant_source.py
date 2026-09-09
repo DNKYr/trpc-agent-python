@@ -132,7 +132,7 @@ class SqlTenantSource(TenantSource):
 
     async def get(self, tenant_id: str) -> Optional[Tenant]:
         async with self._sql_storage.create_db_session() as sql_session:
-            key = SqlKey(key=(tenant_id,), storage_cls=StorageTenant)
+            key = SqlKey(key=(tenant_id, ), storage_cls=StorageTenant)
             row: Optional[StorageTenant] = await self._sql_storage.get(sql_session, key)
             if row is None:
                 return None
@@ -140,7 +140,7 @@ class SqlTenantSource(TenantSource):
 
     async def put(self, tenant: Tenant) -> None:
         async with self._sql_storage.create_db_session() as sql_session:
-            key = SqlKey(key=(tenant.tenant_id,), storage_cls=StorageTenant)
+            key = SqlKey(key=(tenant.tenant_id, ), storage_cls=StorageTenant)
             existing: Optional[StorageTenant] = await self._sql_storage.get(sql_session, key)
             if existing is None:
                 version = tenant.version or 1
@@ -164,10 +164,10 @@ class SqlTenantSource(TenantSource):
     async def delete(self, tenant_id: str) -> None:
         async with self._sql_storage.create_db_session() as sql_session:
             conditions = SqlCondition(filters=[StorageTenant.tenant_id == tenant_id])
-            await self._sql_storage.delete(sql_session, SqlKey(key=(tenant_id,), storage_cls=StorageTenant), conditions)
+            await self._sql_storage.delete(sql_session, SqlKey(key=(tenant_id, ), storage_cls=StorageTenant),
+                                           conditions)
             version_conditions = SqlCondition(filters=[StorageTenantVersion.tenant_id == tenant_id])
-            await self._sql_storage.delete(sql_session,
-                                           SqlKey(key=(tenant_id,), storage_cls=StorageTenantVersion),
+            await self._sql_storage.delete(sql_session, SqlKey(key=(tenant_id, ), storage_cls=StorageTenantVersion),
                                            version_conditions)
             await self._sql_storage.commit(sql_session)
 

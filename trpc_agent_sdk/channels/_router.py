@@ -33,8 +33,7 @@ class InMemoryDedupStore:
         self._default_ttl_seconds = default_ttl_seconds
         self._seen: dict[tuple[str, str, str], float] = {}
 
-    def seen(self, channel: str, chat_id: str, msg_id: str,
-             ttl_seconds: Optional[float] = None) -> bool:
+    def seen(self, channel: str, chat_id: str, msg_id: str, ttl_seconds: Optional[float] = None) -> bool:
         """Return True if the message was already seen; otherwise record it and return False."""
         key = (channel, chat_id, msg_id)
         now = time.monotonic()
@@ -59,15 +58,22 @@ class RoutedMessage(BaseModel):
 class ChannelRouter:
     """Resolve a webhook to a tenant, verify, dedupe, and map session/user."""
 
-    def __init__(self, registry: TenantRegistry, secret_store: SecretStore,
-                 adapters: dict[str, ChannelAdapter], dedup: InMemoryDedupStore):
+    def __init__(self, registry: TenantRegistry, secret_store: SecretStore, adapters: dict[str, ChannelAdapter],
+                 dedup: InMemoryDedupStore):
         self._registry = registry
         self._secret_store = secret_store
         self._adapters = adapters
         self._dedup = dedup
 
-    async def route(self, *, channel_type: str, platform_id: str, raw: dict,
-                    signature: str, timestamp: str, nonce: str, payload: str = "") -> RoutedMessage:
+    async def route(self,
+                    *,
+                    channel_type: str,
+                    platform_id: str,
+                    raw: dict,
+                    signature: str,
+                    timestamp: str,
+                    nonce: str,
+                    payload: str = "") -> RoutedMessage:
         adapter = self._adapters.get(channel_type)
         if adapter is None:
             raise ValueError(f"unsupported channel type: {channel_type}")
@@ -75,11 +81,13 @@ class ChannelRouter:
         if binding.verify_enabled:
             token = await self._secret_store.get(binding.token_ref) if binding.token_ref else ""
             secret = await self._secret_store.get(binding.secret_ref) if binding.secret_ref else ""
-            if not adapter.verify_signature(token=token, secret=secret, signature=signature,
-                                            timestamp=timestamp, nonce=nonce, payload=payload):
+            if not adapter.verify_signature(
+                    token=token, secret=secret, signature=signature, timestamp=timestamp, nonce=nonce, payload=payload):
                 raise AuthenticationError(channel_type)
         inbound = adapter.parse_inbound(raw)
-        if self._dedup.seen(channel_type, inbound.chat_id, inbound.external_msg_id,
+        if self._dedup.seen(channel_type,
+                            inbound.chat_id,
+                            inbound.external_msg_id,
                             ttl_seconds=binding.dedup_ttl_seconds):
             raise DuplicateMessageError(channel_type, inbound.external_msg_id)
         return RoutedMessage(tenant_id=tenant.tenant_id,

@@ -57,6 +57,6 @@ async def test_audit_logger_without_masker():
 
 def test_public_exports_governance():
     import trpc_agent_sdk.tenant as tenant_pkg
-    for name in ("AuditEvent", "AuditSink", "InMemoryAuditSink", "AuditLogger",
-                 "ToolPermissionFilter", "BudgetFilter", "TenantFilterFactory"):
+    for name in ("AuditEvent", "AuditSink", "InMemoryAuditSink", "AuditLogger", "ToolPermissionFilter", "BudgetFilter",
+                 "TenantFilterFactory"):
         assert hasattr(tenant_pkg, name), f"missing export: {name}"

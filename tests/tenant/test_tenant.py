@@ -67,10 +67,27 @@ def test_data_backends_default_to_redis():
 def test_public_exports():
     import trpc_agent_sdk.tenant as tenant_pkg
     for name in (
-        "Tenant", "ModelConfig", "AppConfig", "ToolPermissions", "ChannelBinding",
-        "BackendSpec", "DataBackendConfig", "AuditPolicy", "BudgetConfig", "RateLimitConfig",
-        "SecretStore", "EnvSecretStore", "InMemorySecretStore", "Masker", "SensitiveDataFilter",
-        "TenantSource", "TenantRegistry", "InMemoryTenantSource", "FileTenantSource",
-        "SqlTenantSource", "TenantNotFoundError", "SecretNotFoundError",
+            "Tenant",
+            "ModelConfig",
+            "AppConfig",
+            "ToolPermissions",
+            "ChannelBinding",
+            "BackendSpec",
+            "DataBackendConfig",
+            "AuditPolicy",
+            "BudgetConfig",
+            "RateLimitConfig",
+            "SecretStore",
+            "EnvSecretStore",
+            "InMemorySecretStore",
+            "Masker",
+            "SensitiveDataFilter",
+            "TenantSource",
+            "TenantRegistry",
+            "InMemoryTenantSource",
+            "FileTenantSource",
+            "SqlTenantSource",
+            "TenantNotFoundError",
+            "SecretNotFoundError",
     ):
         assert hasattr(tenant_pkg, name), f"missing export: {name}"

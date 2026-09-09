@@ -22,14 +22,22 @@ def _signature(token, timestamp, nonce, payload):
 def test_verify_signature_ok():
     adapter = WecomAdapter()
     sig = _signature("tok", "123", "abc", "echostr")
-    assert adapter.verify_signature(token="tok", secret="", signature=sig,
-                                    timestamp="123", nonce="abc", payload="echostr") is True
+    assert adapter.verify_signature(token="tok",
+                                    secret="",
+                                    signature=sig,
+                                    timestamp="123",
+                                    nonce="abc",
+                                    payload="echostr") is True
 
 
 def test_verify_signature_bad():
     adapter = WecomAdapter()
-    assert adapter.verify_signature(token="tok", secret="", signature="wrong",
-                                    timestamp="123", nonce="abc", payload="echostr") is False
+    assert adapter.verify_signature(token="tok",
+                                    secret="",
+                                    signature="wrong",
+                                    timestamp="123",
+                                    nonce="abc",
+                                    payload="echostr") is False
 
 
 def test_parse_inbound_single():
@@ -51,8 +59,14 @@ def test_parse_inbound_group():
 def test_session_id_rules():
     adapter = WecomAdapter()
     single = adapter.session_id(adapter.parse_inbound({"msg_id": "m", "from_user": "u1", "text": "", "timestamp": 0}))
-    group = adapter.session_id(adapter.parse_inbound(
-        {"msg_id": "m", "roomid": "r1", "from_user": "u1", "text": "", "timestamp": 0}))
+    group = adapter.session_id(
+        adapter.parse_inbound({
+            "msg_id": "m",
+            "roomid": "r1",
+            "from_user": "u1",
+            "text": "",
+            "timestamp": 0
+        }))
     assert single == "chat_wecom_u1"
     assert group == "group_wecom_r1"
 

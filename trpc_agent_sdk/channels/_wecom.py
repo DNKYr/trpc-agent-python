@@ -18,8 +18,8 @@ class WecomAdapter(ChannelAdapter):
 
     channel_type = "wecom"
 
-    def verify_signature(self, *, token: str, secret: str,
-                         signature: str, timestamp: str, nonce: str, payload: str) -> bool:
+    def verify_signature(self, *, token: str, secret: str, signature: str, timestamp: str, nonce: str,
+                         payload: str) -> bool:
         values = sorted([token, timestamp, nonce, payload])
         computed = hashlib.sha1("".join(values).encode("utf-8")).hexdigest()
         return computed == signature

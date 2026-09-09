@@ -32,8 +32,11 @@ def _agent_name(tenant_id: str) -> str:
 class TenantAgentFactory:
     """Build Runner/Agent from a Tenant configuration."""
 
-    def __init__(self, registry: TenantRegistry, storage: StorageAdapter,
-                 secret_store: SecretStore, tool_registry: Optional[dict[str, BaseTool]] = None):
+    def __init__(self,
+                 registry: TenantRegistry,
+                 storage: StorageAdapter,
+                 secret_store: SecretStore,
+                 tool_registry: Optional[dict[str, BaseTool]] = None):
         self._registry = registry
         self._storage = storage
         self._secret_store = secret_store
@@ -43,13 +46,17 @@ class TenantAgentFactory:
         tenant = await self._get_tenant(tenant_id)
         model = await self._build_model(tenant.model_settings)
         tools = self._filter_tools(tenant.tool_permissions)
-        agent = LlmAgent(name=_agent_name(tenant.tenant_id), model=model,
-                         instruction=tenant.app_config.instruction, tools=tools)
+        agent = LlmAgent(name=_agent_name(tenant.tenant_id),
+                         model=model,
+                         instruction=tenant.app_config.instruction,
+                         tools=tools)
         session_service = await self._storage.session_service(tenant_id)
         memory_service = await self._storage.memory_service(tenant_id)
         artifact_service = await self._storage.artifact_service(tenant_id)
-        return Runner(app_name=tenant.sdk_app_name, agent=agent,
-                      session_service=session_service, memory_service=memory_service,
+        return Runner(app_name=tenant.sdk_app_name,
+                      agent=agent,
+                      session_service=session_service,
+                      memory_service=memory_service,
                       artifact_service=artifact_service,
                       close_session_service_on_close=False,
                       close_memory_service_on_close=False)

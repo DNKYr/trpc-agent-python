@@ -34,8 +34,13 @@ def test_sensitive_data_filter_masks_formatted_message():
     masker = Masker()
     flt = SensitiveDataFilter(masker)
     record = logging.LogRecord(
-        name="test", level=logging.INFO, pathname=__file__, lineno=1,
-        msg="api_key=%s", args=("sk-leak-here",), exc_info=None,
+        name="test",
+        level=logging.INFO,
+        pathname=__file__,
+        lineno=1,
+        msg="api_key=%s",
+        args=("sk-leak-here", ),
+        exc_info=None,
     )
     assert flt.filter(record) is True
     assert "sk-leak-here" not in record.getMessage()

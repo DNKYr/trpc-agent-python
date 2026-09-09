@@ -18,8 +18,8 @@ class TelegramAdapter(ChannelAdapter):
 
     channel_type = "telegram"
 
-    def verify_signature(self, *, token: str, secret: str,
-                         signature: str, timestamp: str, nonce: str, payload: str) -> bool:
+    def verify_signature(self, *, token: str, secret: str, signature: str, timestamp: str, nonce: str,
+                         payload: str) -> bool:
         if not secret:
             return False
         return hmac.compare_digest(secret, signature)

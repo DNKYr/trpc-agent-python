@@ -96,8 +96,10 @@ def split_text(text: str, limit: int = 4000) -> list[str]:
 def build_tenant() -> Tenant:
     return Tenant(
         tenant_id=TENANT_ID,
-        model_settings=ModelConfig(provider=MODEL_PROVIDER, model_name=MODEL_NAME,
-                                   endpoint=MODEL_ENDPOINT, api_key_ref="model_key"),
+        model_settings=ModelConfig(provider=MODEL_PROVIDER,
+                                   model_name=MODEL_NAME,
+                                   endpoint=MODEL_ENDPOINT,
+                                   api_key_ref="model_key"),
         data_backends=DataBackendConfig(
             session=BackendSpec(type="in_memory"),
             memory=BackendSpec(type="in_memory"),
@@ -134,7 +136,10 @@ async def main() -> None:
             try:
                 resp = await client.get(
                     f"{TELEGRAM_API}/getUpdates",
-                    params={"offset": offset, "timeout": 30},
+                    params={
+                        "offset": offset,
+                        "timeout": 30
+                    },
                 )
                 resp.raise_for_status()
                 updates = resp.json().get("result", [])
@@ -162,15 +167,18 @@ async def main() -> None:
                     continue
 
                 chat_id = routed.inbound.chat_id
-                logger.info("message user=%s session=%s chat=%s: %r",
-                            routed.user_id, routed.session_id, chat_id, routed.inbound.text)
+                logger.info("message user=%s session=%s chat=%s: %r", routed.user_id, routed.session_id, chat_id,
+                            routed.inbound.text)
                 try:
                     await run_and_reply(pool, client, routed, chat_id)
                 except Exception as ex:
                     logger.error("run failed: %s", ex, exc_info=True)
                     await client.post(
                         f"{TELEGRAM_API}/sendMessage",
-                        json={"chat_id": chat_id, "text": f"error: {type(ex).__name__}"},
+                        json={
+                            "chat_id": chat_id,
+                            "text": f"error: {type(ex).__name__}"
+                        },
                     )
 
 
@@ -179,9 +187,9 @@ async def run_and_reply(pool: RunnerPool, client: httpx.AsyncClient, routed, cha
     runner = await pool.get_runner(routed.tenant_id)
     final_text = ""
     async for event in runner.run_async(
-        user_id=routed.user_id,
-        session_id=routed.session_id,
-        new_message=routed.content,
+            user_id=routed.user_id,
+            session_id=routed.session_id,
+            new_message=routed.content,
     ):
         if event.partial or event.author == "user":
             continue

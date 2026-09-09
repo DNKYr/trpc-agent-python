@@ -25,8 +25,13 @@ def _make_router(secret_value="s3cr3t"):
     tenant = Tenant(
         tenant_id="acme",
         model_settings=ModelConfig(provider="openai", model_name="gpt-4o"),
-        im_channels=[ChannelBinding(binding_id="b1", channel_type="telegram", webhook_url="https://x.example",
-                                    secret_ref="tg-secret", external_account_id="mybot")],
+        im_channels=[
+            ChannelBinding(binding_id="b1",
+                           channel_type="telegram",
+                           webhook_url="https://x.example",
+                           secret_ref="tg-secret",
+                           external_account_id="mybot")
+        ],
     )
     return source, tenant, secret_value
 
@@ -36,10 +41,26 @@ async def test_route_success():
     await source.put(tenant)
     store = InMemorySecretStore({"tg-secret": secret})
     router = ChannelRouter(TenantRegistry(source), store, {"telegram": TelegramAdapter()}, InMemoryDedupStore())
-    raw = {"message": {"message_id": 1, "chat": {"id": 42, "type": "private"},
-                       "from": {"id": 7}, "text": "hi", "date": 10}}
-    routed = await router.route(channel_type="telegram", platform_id="mybot", raw=raw,
-                                signature=secret, timestamp="", nonce="")
+    raw = {
+        "message": {
+            "message_id": 1,
+            "chat": {
+                "id": 42,
+                "type": "private"
+            },
+            "from": {
+                "id": 7
+            },
+            "text": "hi",
+            "date": 10
+        }
+    }
+    routed = await router.route(channel_type="telegram",
+                                platform_id="mybot",
+                                raw=raw,
+                                signature=secret,
+                                timestamp="",
+                                nonce="")
     assert routed.tenant_id == "acme"
     assert routed.user_id == "7"
     assert routed.session_id == "chat_telegram_42"
@@ -51,11 +72,27 @@ async def test_route_bad_signature():
     await source.put(tenant)
     store = InMemorySecretStore({"tg-secret": "s3cr3t"})
     router = ChannelRouter(TenantRegistry(source), store, {"telegram": TelegramAdapter()}, InMemoryDedupStore())
-    raw = {"message": {"message_id": 1, "chat": {"id": 42, "type": "private"},
-                       "from": {"id": 7}, "text": "hi", "date": 10}}
+    raw = {
+        "message": {
+            "message_id": 1,
+            "chat": {
+                "id": 42,
+                "type": "private"
+            },
+            "from": {
+                "id": 7
+            },
+            "text": "hi",
+            "date": 10
+        }
+    }
     with pytest.raises(AuthenticationError):
-        await router.route(channel_type="telegram", platform_id="mybot", raw=raw,
-                           signature="wrong", timestamp="", nonce="")
+        await router.route(channel_type="telegram",
+                           platform_id="mybot",
+                           raw=raw,
+                           signature="wrong",
+                           timestamp="",
+                           nonce="")
 
 
 async def test_route_duplicate():
@@ -63,13 +100,28 @@ async def test_route_duplicate():
     await source.put(tenant)
     store = InMemorySecretStore({"tg-secret": secret})
     router = ChannelRouter(TenantRegistry(source), store, {"telegram": TelegramAdapter()}, InMemoryDedupStore())
-    raw = {"message": {"message_id": 1, "chat": {"id": 42, "type": "private"},
-                       "from": {"id": 7}, "text": "hi", "date": 10}}
-    await router.route(channel_type="telegram", platform_id="mybot", raw=raw,
-                       signature=secret, timestamp="", nonce="")
+    raw = {
+        "message": {
+            "message_id": 1,
+            "chat": {
+                "id": 42,
+                "type": "private"
+            },
+            "from": {
+                "id": 7
+            },
+            "text": "hi",
+            "date": 10
+        }
+    }
+    await router.route(channel_type="telegram", platform_id="mybot", raw=raw, signature=secret, timestamp="", nonce="")
     with pytest.raises(DuplicateMessageError):
-        await router.route(channel_type="telegram", platform_id="mybot", raw=raw,
-                           signature=secret, timestamp="", nonce="")
+        await router.route(channel_type="telegram",
+                           platform_id="mybot",
+                           raw=raw,
+                           signature=secret,
+                           timestamp="",
+                           nonce="")
 
 
 async def test_route_different_chats_same_msg_id_not_duplicate():
@@ -77,14 +129,46 @@ async def test_route_different_chats_same_msg_id_not_duplicate():
     await source.put(tenant)
     store = InMemorySecretStore({"tg-secret": secret})
     router = ChannelRouter(TenantRegistry(source), store, {"telegram": TelegramAdapter()}, InMemoryDedupStore())
-    raw1 = {"message": {"message_id": 1, "chat": {"id": 42, "type": "private"},
-                        "from": {"id": 7}, "text": "hi", "date": 10}}
-    raw2 = {"message": {"message_id": 1, "chat": {"id": 43, "type": "private"},
-                        "from": {"id": 8}, "text": "hi", "date": 10}}
-    r1 = await router.route(channel_type="telegram", platform_id="mybot", raw=raw1,
-                            signature=secret, timestamp="", nonce="")
-    r2 = await router.route(channel_type="telegram", platform_id="mybot", raw=raw2,
-                            signature=secret, timestamp="", nonce="")
+    raw1 = {
+        "message": {
+            "message_id": 1,
+            "chat": {
+                "id": 42,
+                "type": "private"
+            },
+            "from": {
+                "id": 7
+            },
+            "text": "hi",
+            "date": 10
+        }
+    }
+    raw2 = {
+        "message": {
+            "message_id": 1,
+            "chat": {
+                "id": 43,
+                "type": "private"
+            },
+            "from": {
+                "id": 8
+            },
+            "text": "hi",
+            "date": 10
+        }
+    }
+    r1 = await router.route(channel_type="telegram",
+                            platform_id="mybot",
+                            raw=raw1,
+                            signature=secret,
+                            timestamp="",
+                            nonce="")
+    r2 = await router.route(channel_type="telegram",
+                            platform_id="mybot",
+                            raw=raw2,
+                            signature=secret,
+                            timestamp="",
+                            nonce="")
     assert r1.session_id == "chat_telegram_42"
     assert r2.session_id == "chat_telegram_43"
 
@@ -94,16 +178,38 @@ async def test_route_verify_disabled():
     tenant = Tenant(
         tenant_id="acme",
         model_settings=ModelConfig(provider="openai", model_name="gpt-4o"),
-        im_channels=[ChannelBinding(binding_id="b1", channel_type="telegram", webhook_url="https://x.example",
-                                    secret_ref="tg-secret", external_account_id="mybot", verify_enabled=False)],
+        im_channels=[
+            ChannelBinding(binding_id="b1",
+                           channel_type="telegram",
+                           webhook_url="https://x.example",
+                           secret_ref="tg-secret",
+                           external_account_id="mybot",
+                           verify_enabled=False)
+        ],
     )
     await source.put(tenant)
     store = InMemorySecretStore({"tg-secret": "s3cr3t"})
     router = ChannelRouter(TenantRegistry(source), store, {"telegram": TelegramAdapter()}, InMemoryDedupStore())
-    raw = {"message": {"message_id": 1, "chat": {"id": 42, "type": "private"},
-                       "from": {"id": 7}, "text": "hi", "date": 10}}
-    routed = await router.route(channel_type="telegram", platform_id="mybot", raw=raw,
-                                signature="wrong", timestamp="", nonce="")
+    raw = {
+        "message": {
+            "message_id": 1,
+            "chat": {
+                "id": 42,
+                "type": "private"
+            },
+            "from": {
+                "id": 7
+            },
+            "text": "hi",
+            "date": 10
+        }
+    }
+    routed = await router.route(channel_type="telegram",
+                                platform_id="mybot",
+                                raw=raw,
+                                signature="wrong",
+                                timestamp="",
+                                nonce="")
     assert routed.tenant_id == "acme"
 
 
@@ -121,16 +227,32 @@ async def test_route_unknown_binding():
     await source.put(tenant)
     store = InMemorySecretStore({"tg-secret": secret})
     router = ChannelRouter(TenantRegistry(source), store, {"telegram": TelegramAdapter()}, InMemoryDedupStore())
-    raw = {"message": {"message_id": 1, "chat": {"id": 42, "type": "private"},
-                       "from": {"id": 7}, "text": "hi", "date": 10}}
+    raw = {
+        "message": {
+            "message_id": 1,
+            "chat": {
+                "id": 42,
+                "type": "private"
+            },
+            "from": {
+                "id": 7
+            },
+            "text": "hi",
+            "date": 10
+        }
+    }
     with pytest.raises(ValueError):
-        await router.route(channel_type="telegram", platform_id="unknown", raw=raw,
-                           signature=secret, timestamp="", nonce="")
+        await router.route(channel_type="telegram",
+                           platform_id="unknown",
+                           raw=raw,
+                           signature=secret,
+                           timestamp="",
+                           nonce="")
 
 
 def test_public_exports_channels():
     import trpc_agent_sdk.channels as channels
-    for name in ("ChannelAdapter", "WecomAdapter", "TelegramAdapter", "ChannelRouter",
-                 "InMemoryDedupStore", "InboundMessage", "OutboundMessage",
-                 "content_from_text", "event_to_text", "AuthenticationError", "DuplicateMessageError"):
+    for name in ("ChannelAdapter", "WecomAdapter", "TelegramAdapter", "ChannelRouter", "InMemoryDedupStore",
+                 "InboundMessage", "OutboundMessage", "content_from_text", "event_to_text", "AuthenticationError",
+                 "DuplicateMessageError"):
         assert hasattr(channels, name), f"missing export: {name}"

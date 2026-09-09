@@ -23,8 +23,8 @@ class ChannelAdapter(ABC):
     channel_type: str = ""
 
     @abstractmethod
-    def verify_signature(self, *, token: str, secret: str,
-                         signature: str, timestamp: str, nonce: str, payload: str) -> bool:
+    def verify_signature(self, *, token: str, secret: str, signature: str, timestamp: str, nonce: str,
+                         payload: str) -> bool:
         """Verify a webhook signature using the resolved token/secret."""
 
     @abstractmethod
@@ -33,8 +33,12 @@ class ChannelAdapter(ABC):
 
     def render_outbound(self, chat_id: str, event: Event) -> list[OutboundMessage]:
         """Render an agent event into outbound text message(s)."""
-        return [OutboundMessage(channel=self.channel_type, chat_id=chat_id,
-                                text=event_to_text(event), is_final=not event.partial)]
+        return [
+            OutboundMessage(channel=self.channel_type,
+                            chat_id=chat_id,
+                            text=event_to_text(event),
+                            is_final=not event.partial)
+        ]
 
     def session_id(self, msg: InboundMessage) -> str:
         """Derive the session id for a message (single vs group chat)."""

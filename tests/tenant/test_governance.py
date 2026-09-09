@@ -100,6 +100,5 @@ def test_filter_factory_assembles():
 
 
 def test_filter_factory_empty():
-    tenant = Tenant(tenant_id="acme",
-                    model_settings=ModelConfig(provider="openai", model_name="gpt-4o"))
+    tenant = Tenant(tenant_id="acme", model_settings=ModelConfig(provider="openai", model_name="gpt-4o"))
     assert TenantFilterFactory().build_filters(tenant) == []

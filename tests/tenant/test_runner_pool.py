@@ -19,9 +19,7 @@ from trpc_agent_sdk.tenant._tenant_source import InMemoryTenantSource
 
 
 def _tenant(version=1):
-    return Tenant(tenant_id="acme",
-                  model_settings=ModelConfig(provider="openai", model_name="gpt-4o"),
-                  version=version)
+    return Tenant(tenant_id="acme", model_settings=ModelConfig(provider="openai", model_name="gpt-4o"), version=version)
 
 
 def _make_pool(source=None):

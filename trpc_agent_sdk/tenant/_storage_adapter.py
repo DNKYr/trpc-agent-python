@@ -52,8 +52,7 @@ class StorageAdapter:
             self._artifact_versions[tenant_id] = tenant.version
         return self._artifact_cache[tenant_id]
 
-    async def migrate_session(self, *, tenant_id: str,
-                              source: BackendSpec, target: BackendSpec) -> int:
+    async def migrate_session(self, *, tenant_id: str, source: BackendSpec, target: BackendSpec) -> int:
         """Copy a tenant's sessions from source backend to target backend."""
         app_name = (await self._get_tenant(tenant_id)).sdk_app_name
         src = await self._factory.session_service(source)
@@ -64,12 +63,13 @@ class StorageAdapter:
             if await dst.get_session(app_name=summary.app_name, user_id=summary.user_id,
                                      session_id=summary.id) is not None:
                 continue
-            full = await src.get_session(app_name=summary.app_name, user_id=summary.user_id,
-                                         session_id=summary.id)
+            full = await src.get_session(app_name=summary.app_name, user_id=summary.user_id, session_id=summary.id)
             if full is None:
                 continue
-            session = await dst.create_session(app_name=full.app_name, user_id=full.user_id,
-                                               session_id=full.id, state=full.state)
+            session = await dst.create_session(app_name=full.app_name,
+                                               user_id=full.user_id,
+                                               session_id=full.id,
+                                               state=full.state)
             for event in full.events:
                 await dst.append_event(session=session, event=event)
             count += 1

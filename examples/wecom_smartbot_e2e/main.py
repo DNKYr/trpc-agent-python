@@ -62,8 +62,10 @@ WECOM_TEXT_LIMIT = 2000  # stream content 保守分片长度
 def build_tenant() -> Tenant:
     return Tenant(
         tenant_id=TENANT_ID,
-        model_settings=ModelConfig(provider="deepseek", model_name=MODEL_NAME,
-                                   endpoint=MODEL_ENDPOINT, api_key_ref="model_key"),
+        model_settings=ModelConfig(provider="deepseek",
+                                   model_name=MODEL_NAME,
+                                   endpoint=MODEL_ENDPOINT,
+                                   api_key_ref="model_key"),
         data_backends=DataBackendConfig(
             session=BackendSpec(type="in_memory"),
             memory=BackendSpec(type="in_memory"),
@@ -122,17 +124,16 @@ async def main() -> None:
         if msgid and dedup.seen("wecom_smartbot", str(chatid), msgid):
             return
 
-        logger.info("message user=%s chattype=%s chatid=%s msgid=%s: %r",
-                    userid, chattype, chatid, msgid, content)
+        logger.info("message user=%s chattype=%s chatid=%s msgid=%s: %r", userid, chattype, chatid, msgid, content)
 
         session_id = f"{'group' if chattype == 'group' else 'chat'}_wecom_{chatid}"
         try:
             runner = await pool.get_runner(TENANT_ID)
             final_text = ""
             async for event in runner.run_async(
-                user_id=userid,
-                session_id=session_id,
-                new_message=content_from_text(content),
+                    user_id=userid,
+                    session_id=session_id,
+                    new_message=content_from_text(content),
             ):
                 if event.partial or event.author == "user":
                     continue
@@ -147,8 +148,7 @@ async def main() -> None:
         except Exception as ex:
             logger.error("run failed: %s", ex, exc_info=True)
             try:
-                await client.reply_stream(frame, generate_req_id("stream"),
-                                          f"error: {type(ex).__name__}", True)
+                await client.reply_stream(frame, generate_req_id("stream"), f"error: {type(ex).__name__}", True)
             except Exception:
                 pass
 

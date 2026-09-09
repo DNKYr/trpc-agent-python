@@ -14,6 +14,7 @@ from trpc_agent_sdk.tenant._tenant import Tenant
 
 
 class _FakeSource(TenantSource):
+
     def __init__(self):
         self._tenants = {}
 

@@ -79,8 +79,10 @@ _token_cache: dict = {"token": "", "expires_at": 0.0}
 def build_tenant() -> Tenant:
     return Tenant(
         tenant_id=TENANT_ID,
-        model_settings=ModelConfig(provider="deepseek", model_name=MODEL_NAME,
-                                   endpoint=MODEL_ENDPOINT, api_key_ref="model_key"),
+        model_settings=ModelConfig(provider="deepseek",
+                                   model_name=MODEL_NAME,
+                                   endpoint=MODEL_ENDPOINT,
+                                   api_key_ref="model_key"),
         data_backends=DataBackendConfig(
             session=BackendSpec(type="in_memory"),
             memory=BackendSpec(type="in_memory"),
@@ -111,8 +113,7 @@ _router = ChannelRouter(_registry, _secret_store, {"wecom": WecomAdapter()}, InM
 async def get_access_token(client: httpx.AsyncClient) -> str:
     if _token_cache["token"] and time.time() < _token_cache["expires_at"]:
         return _token_cache["token"]
-    resp = await client.get(f"{WECOM_API}/gettoken",
-                            params={"corpid": CORP_ID, "corpsecret": CORP_SECRET})
+    resp = await client.get(f"{WECOM_API}/gettoken", params={"corpid": CORP_ID, "corpsecret": CORP_SECRET})
     resp.raise_for_status()
     data = resp.json()
     if data.get("errcode") != 0:
@@ -127,8 +128,14 @@ async def send_text(client: httpx.AsyncClient, to_user: str, text: str) -> None:
     resp = await client.post(
         f"{WECOM_API}/message/send",
         params={"access_token": token},
-        json={"touser": to_user, "msgtype": "text", "agentid": AGENT_ID,
-              "text": {"content": text}},
+        json={
+            "touser": to_user,
+            "msgtype": "text",
+            "agentid": AGENT_ID,
+            "text": {
+                "content": text
+            }
+        },
     )
     resp.raise_for_status()
     data = resp.json()
@@ -159,16 +166,20 @@ def event_reply_text(event) -> str:
 
 
 @app.get("/wecom/callback")
-async def verify_callback(msg_signature: str = Query(...), timestamp: str = Query(...),
-                          nonce: str = Query(...), echostr: str = Query(...)):
+async def verify_callback(msg_signature: str = Query(...),
+                          timestamp: str = Query(...),
+                          nonce: str = Query(...),
+                          echostr: str = Query(...)):
     if not crypto.verify_signature(msg_signature, timestamp, nonce, echostr):
         return "invalid signature"
     return crypto.decrypt(echostr)
 
 
 @app.post("/wecom/callback")
-async def receive_callback(request: Request, msg_signature: str = Query(...),
-                           timestamp: str = Query(...), nonce: str = Query(...)):
+async def receive_callback(request: Request,
+                           msg_signature: str = Query(...),
+                           timestamp: str = Query(...),
+                           nonce: str = Query(...)):
     body = await request.body()
     encrypt = ET.fromstring(body).findtext("Encrypt") or ""
     if not crypto.verify_signature(msg_signature, timestamp, nonce, encrypt):
@@ -188,15 +199,19 @@ async def receive_callback(request: Request, msg_signature: str = Query(...),
 
     try:
         routed = await _router.route(
-            channel_type="wecom", platform_id=AGENT_ID, raw=inbound,
-            signature=msg_signature, timestamp=timestamp, nonce=nonce, payload=encrypt,
+            channel_type="wecom",
+            platform_id=AGENT_ID,
+            raw=inbound,
+            signature=msg_signature,
+            timestamp=timestamp,
+            nonce=nonce,
+            payload=encrypt,
         )
     except Exception as ex:
         logger.info("route skipped (%s): %s", type(ex).__name__, ex)
         return "success"
 
-    logger.info("message user=%s session=%s: %r",
-                routed.user_id, routed.session_id, routed.inbound.text)
+    logger.info("message user=%s session=%s: %r", routed.user_id, routed.session_id, routed.inbound.text)
 
     async with httpx.AsyncClient(timeout=60.0) as client:
         try:
@@ -210,9 +225,9 @@ async def run_and_reply(client: httpx.AsyncClient, routed) -> None:
     runner = await _pool.get_runner(routed.tenant_id)
     final_text = ""
     async for event in runner.run_async(
-        user_id=routed.user_id,
-        session_id=routed.session_id,
-        new_message=routed.content,
+            user_id=routed.user_id,
+            session_id=routed.session_id,
+            new_message=routed.content,
     ):
         if event.partial or event.author == "user":
             continue
