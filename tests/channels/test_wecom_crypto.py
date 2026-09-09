@@ -11,6 +11,8 @@ import pytest
 
 from trpc_agent_sdk.channels._wecom_crypto import WeComCrypto
 
+# 企业微信官方「加解密方案说明」文档公开的示例测试向量（非真实企业凭证），
+# 用于验证 AES 加解密算法，全网公开，无泄漏风险。
 TOKEN = "QDG6eK"
 ENCODING_AES_KEY = "jWmYm7qr5nMoAUwZRjGtBxmz3KA1tkAj3ykkR6q2B2C"
 CORP_ID = "wx5823bf96d3bd56c7"
